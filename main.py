@@ -10,6 +10,7 @@ import numpy as np
 from PlayerFSM import PlayerFSM
 from TimerController import TimerController
 from InputHandler import InputHandler
+from CollisionHandler import CollisionHandler
 
 x,y=0,1
 
@@ -44,6 +45,7 @@ class Player(object):
         self.yJumpSpeed = 0
         self.onGround = True
         self.Dgrav = 0
+        self.Lx = 1
 
     def move(self, x, y):
         self.pos += [x,y]
@@ -63,9 +65,9 @@ def checkQuit():
 def timeIntegrator(player):
     global grav
     if player.onGround:
-        player.pos += player.gDir*player.gSpeed*timePerFrameInms
+        player.pos += player.gDir*player.gSpeed*timePerFrameInms*player.Lx
     else:
-        player.pos[x] += player.gDir[x]*player.gSpeed*timePerFrameInms
+        player.pos[x] += player.gDir[x]*player.gSpeed*timePerFrameInms*player.Lx
         player.yJumpSpeed += (grav + player.Dgrav)*timePerFrameInms
         player.pos[y] += player.yJumpSpeed*timePerFrameInms + (grav + player.Dgrav)*timePerFrameInms*timePerFrameInms
         if player.pos[y]>=150:
@@ -101,6 +103,7 @@ def main():
     player = Player()
     playerFSM = PlayerFSM(timerController)
     inputHandler = InputHandler()
+    collisionHandler = CollisionHandler()
 
     #main game loop
     while True:
@@ -110,14 +113,22 @@ def main():
         #counter = counter +1
 
         while timeSinceRender > timePerFrameInms:
-            #Incase we take more than one frame to update
+
             timeSinceRender -= timePerFrameInms
-            #We update untill it is time to draw the frame
+
             checkQuit()
-            """ Game logic is held in the World class """
+
+            #update logic
             inputHandler.updateKeyState()
-            playerFSM(player, inputHandler.pressed, inputHandler.previouslyPressed)
             timerController.tick()
+
+            #update intents
+            playerFSM(player, inputHandler.pressed, inputHandler.previouslyPressed)
+
+            #find contraints
+            collisionHandler(player)
+
+            #update world
             timeIntegrator(player)
         
         drawScene(surface, player)
