@@ -24,9 +24,9 @@ class PlayerConsts:
     	hitBoxEnd =15
         runEnd = 10
     class Jumping:
-        initialJumpSpeed = -0.5
-        highJumpDgrav = -0
-        lowJumpDgrav = 0
+        initialJumpSpeed = -0.3
+        highJumpDgrav = -0.6
+        lowJumpDgrav = -0.2
     class Falling:
         pass
 

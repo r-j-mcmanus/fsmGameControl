@@ -17,7 +17,7 @@ x,y=0,1
 FPS = 60
 timePerFrameInms = 1.0/FPS*1000
 
-grav = 0.002
+grav = 0.0015
 
 class Colors:
     white = (255,255,255)
@@ -68,8 +68,8 @@ def timeIntegrator(player):
         player.pos += player.gDir*player.gSpeed*timePerFrameInms*player.Lx
     else:
         player.pos[x] += player.gDir[x]*player.gSpeed*timePerFrameInms*player.Lx
-        player.yJumpSpeed += (grav + player.Dgrav)*timePerFrameInms
-        player.pos[y] += player.yJumpSpeed*timePerFrameInms + (grav + player.Dgrav)*timePerFrameInms*timePerFrameInms
+        player.yJumpSpeed += grav*(1 + player.Dgrav)*timePerFrameInms
+        player.pos[y] += player.yJumpSpeed*timePerFrameInms + grav*(1 + player.Dgrav)*timePerFrameInms*timePerFrameInms
         if player.pos[y]>=150:
             player.pos[y] = 150
 
@@ -80,7 +80,7 @@ def drawScene(surface, player):
     if player.hurtBool:
         pygame.draw.rect(surface, Colors.yellow, player.colBox.move(player.pos),1)
     if player.hitBool:
-        pygame.draw.rect(surface, Colors.blue, player.hitbox.move(player.pos+player.hitboxOffset()),1)
+        pygame.draw.rect(surface, Colors.yellow, player.hitbox.move(player.pos+player.hitboxOffset()),1)
 
     pygame.display.update()
 

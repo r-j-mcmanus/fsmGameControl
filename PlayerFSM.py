@@ -158,6 +158,8 @@ class PlayerFSM(object):
             print "enter rolling"
             if not np.array_equal(direction,[0,0]):
                 player.gDir = direction
+            else:
+                print "wtf?"
             global timerController 
             timerController.startTimer(self.rollTimer)
             player.gSpeed = PlayerConsts.Roll.maxSpeed
@@ -282,8 +284,9 @@ class PlayerFSM(object):
             self.highjump = True;
 
         def internal(self, player, pressed, previouslyPressed):
-            if not pressed[Actions.jump] and not self.highjump:
+            if not pressed[Actions.jump] and self.highjump:
                 player.Dgrav = PlayerConsts.Jumping.lowJumpDgrav
+                self.highjump = False
 
         def checkChange(self, player, pressed, previouslyPressed):
             if player.yJumpSpeed >=0:
@@ -295,6 +298,7 @@ class PlayerFSM(object):
             player.onGround = False
             player.yJumpSpeed = PlayerConsts.Jumping.initialJumpSpeed - player.gDir[y]*player.gSpeed
             player.Dgrav = PlayerConsts.Jumping.highJumpDgrav
+            self.highjump = True
 
         def exit(self, player):
             player.yJumpSpeed = 0
@@ -313,7 +317,7 @@ class PlayerFSM(object):
 
         def enter(self, player):
             print "enter falling"
-            player.yImpulse = 0
+            player.Dgrav = 0
 
         def exit(self, player):
             player.pos[y] = 150

@@ -1,6 +1,6 @@
 
 import pygame, sys
-from pygame import K_a, K_s, K_d, K_w, K_LSHIFT, K_SPACE, K_UP, K_DOWN,K_LEFT, K_RIGHT
+from pygame import K_a, K_s, K_d, K_w, K_LSHIFT, K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
 class Actions:
     left = 0
