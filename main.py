@@ -11,6 +11,7 @@ from PlayerFSM import PlayerFSM
 from TimerController import TimerController
 from InputHandler import InputHandler
 from CollisionHandler import CollisionHandler
+from Player import Player
 
 x,y=0,1
 
@@ -18,6 +19,8 @@ FPS = 60
 timePerFrameInms = 1.0/FPS*1000
 
 grav = 0.0015
+
+gravImpulse = grav * timePerFrameInms
 
 class Colors:
     white = (255,255,255)
@@ -28,30 +31,8 @@ class Colors:
     yellow= (255,255,000)
     purple= (255,000,255)
 
-class Player(object):
-    def __init__(self):
-        self.body = pygame.Rect(0, 0, 10, 10)
-        self.colour = Colors.red
-        self.stateID = PlayerFSM.StateID.Standing
-        self.pos = np.array([10.0, 150.0])
-        self.gDir = np.array([1,0]) # right == 1 or left == -1
-        self.gSpeed = 0 #ground speed
-        self.colBox = pygame.Rect(0, 0, 10, 10)
-        self.physColBool = True
-        self.hurtbox = pygame.Rect(0, 0, 10, 10)
-        self.hurtBool = True
-        self.hitBool = False
-        self.hitbox = pygame.Rect(0, 3, 10, 4)
-        self.yJumpSpeed = 0
-        self.onGround = True
-        self.Dgrav = 0
-        self.Lx = 1
 
-    def move(self, x, y):
-        self.pos += [x,y]
-
-    def hitboxOffset(self):
-        return [0.5*((self.gDir[x]+1)*self.colBox.width + (self.gDir[x]-1)*self.hitbox.width),0]
+    
 
 
 def checkQuit():
@@ -64,21 +45,23 @@ def checkQuit():
 
 def timeIntegrator(player):
     global grav
-    if player.onGround:
-        player.pos += player.gDir*player.gSpeed*timePerFrameInms*player.Lx
-    else:
-        player.pos[x] += player.gDir[x]*player.gSpeed*timePerFrameInms*player.Lx
-        player.yJumpSpeed += grav*(1 + player.Dgrav)*timePerFrameInms
-        player.pos[y] += player.yJumpSpeed*timePerFrameInms + grav*(1 + player.Dgrav)*timePerFrameInms*timePerFrameInms
-        if player.pos[y]>=150:
-            player.pos[y] = 150
+    
+    player.pos[x] += player.gDir[x]*player.gSpeed*timePerFrameInms*player.Lx
+    player.pos[y] += (player.yJumpSpeed + gravImpulse*(1 + player.Dgrav))*timePerFrameInms*player.Ly
+    player.yJumpSpeed += gravImpulse*(1 + player.Dgrav)
+    if player.pos[y]>=150:
+        player.pos[y] = 150
 
 
 def drawScene(surface, player):
     surface.fill(Colors.black)
     pygame.draw.rect(surface, player.colour, player.body.move(player.pos))
+
+    pygame.draw.rect(surface, Colors.green, pygame.Rect(100.0, 130.0, 20, 40))
+
+
     if player.hurtBool:
-        pygame.draw.rect(surface, Colors.yellow, player.colBox.move(player.pos),1)
+        pygame.draw.rect(surface, Colors.yellow, player.colBox.move(player.pos),0)
     if player.hitBool:
         pygame.draw.rect(surface, Colors.yellow, player.hitbox.move(player.pos+player.hitboxOffset()),1)
 

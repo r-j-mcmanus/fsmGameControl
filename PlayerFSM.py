@@ -313,6 +313,10 @@ class PlayerFSM(object):
         def checkChange(self, player, pressed, previouslyPressed):
             if player.pos[y] >= 150:
                 return True, PlayerFSM.StateID.Standing, ()
+            if player.landed:
+                return True, PlayerFSM.StateID.Standing, ()
+
+
             return False, None, None
 
         def enter(self, player):
@@ -322,4 +326,6 @@ class PlayerFSM(object):
         def exit(self, player):
             player.pos[y] = 150
             player.onGround = True
+            player.landed = False
+            player.Dgrav = 1
 
