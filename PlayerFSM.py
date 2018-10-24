@@ -327,5 +327,5 @@ class PlayerFSM(object):
             player.pos[y] = 150
             player.onGround = True
             player.landed = False
-            player.Dgrav = 1
+            player.Dgrav = -1
 

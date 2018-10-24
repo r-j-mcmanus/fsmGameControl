@@ -1,15 +1,7 @@
 
 import pygame
 
-x,y = 0,1
-e = 0.01
-
-counter = 0
-
-FPS = 60
-timePerFrameInms = 1.0/FPS*1000
-
-x,y = 0,1
+from Conts import *
 
 
 
@@ -51,32 +43,34 @@ class CollisionHandler(object):
             if 0<=lx1<=1 or 0<=lx2<=1:
                 if not (0<=lx2<=1) and player.gDir[x]<0:
                     lx = lx1
+                    colSide = "left"
                 elif not (0<=lx1<=1) and player.gDir[x]>0:
                     lx = lx2
+                    colSide = "right"
             else:
                 continue
 
-            if player.gDir[y] !=0:
-                ly1 = (geometry.top - player.bottom) / ((player.yJumpSpeed + gravImpulse*(1 + player.Dgrav))*timePerFrameInms)
-                ly2 = (geometry.bottom - player.top) / ((player.yJumpSpeed + gravImpulse*(1 + player.Dgrav))*timePerFrameInms)
+            """if player.onGround == False:
+                dv_y = player.yJumpSpeed + player.yImpulse
+                ly1 = (geometry.top - player.bottom) / (dv_y*timePerFrameInms)
+                ly2 = (geometry.bottom - player.top) / (dv_y*timePerFrameInms)
                 if 0<=ly1<=1 or 0<=ly2<=1:
-                    if not 0<=ly2<=1 and player.gDir[y]>0:
+                    if not 0<=ly2<=1 and dv_y<0:
                         ly = ly1
-                    elif not 0<=ly1<=1 and player.gDir[y]<0:
+                        print "hit top"
+                    elif not 0<=ly1<=1 and dv_y>0:
                         ly = ly2
+                        print "hit bottom"
                 else:
                     continue
             elif player.top < geometry.bottom and geometry.top < player.bottom:
                 ly = 0
-            else :
-                continue
+            else:
+                continue"""
+
+            if player.top < geometry.bottom and geometry.top < player.bottom:
+                ly = 0  
             
             if lx != -1 and ly != -1:
-                if lx > ly:
                     player.Lx = lx
-                elif ly > lx:
-                    player.Ly = ly
-                else:
-                    player.Lx = lx
-                    player.Ly = ly
             

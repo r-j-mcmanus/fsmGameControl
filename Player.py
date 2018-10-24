@@ -5,16 +5,7 @@ from PlayerFSM import PlayerFSM
 
 import numpy as np
 
-x,y=0,1
-
-class Colors:
-    white = (255,255,255)
-    black = (000,000,000)
-    red   = (255,000,000)
-    green = (000,255,000)
-    blue  = (000,000,255)
-    yellow= (255,255,000)
-    purple= (255,000,255)
+from Conts import *
 
 class Player(object):
     def __init__(self):
@@ -33,7 +24,7 @@ class Player(object):
         self.yJumpSpeed = 0
         self.onGround = True
         self.landed = False
-        self.Dgrav = 1
+        self.Dgrav = -1
         self.Lx = 1
         self.Ly = 1
         self.vel = np.array([0,0])
@@ -60,4 +51,8 @@ class Player(object):
     def bottom(self):
         return self.pos[y] + self.body.height 
 
+    @property
+    def yImpulse(self):
+        return gravImpulse*(1 + self.Dgrav)
+        
     
