@@ -27,22 +27,19 @@ def checkQuit():
 
 """--------------------------------------------------------"""
 
-def timeIntegrator(player):
-    global grav
-    
+def timeIntegrator(player):    
     player.pos[x] += player.gDir[x]*player.gSpeed*timePerFrameInms*player.Lx
     player.pos[y] += (player.yJumpSpeed + gravImpulse*(1 + player.Dgrav))*timePerFrameInms*player.Ly
     player.yJumpSpeed += gravImpulse*(1 + player.Dgrav)
-    if player.pos[y]>=150:
-        player.pos[y] = 150
 
 
 def drawScene(surface, player):
     surface.fill(Colors.black)
     pygame.draw.rect(surface, player.colour, player.body.move(player.pos))
 
-    pygame.draw.rect(surface, Colors.green, pygame.Rect(100.0, 130.0, 20, 40))
-
+    pygame.draw.rect(surface, Colors.green, pygame.Rect(100.0, 130.0, 100, 40))
+    pygame.draw.rect(surface, Colors.green, pygame.Rect(10.0, 70.0, 40, 40))
+    pygame.draw.rect(surface, Colors.green, pygame.Rect(0.0, 160.0, 300, 40))
 
     if player.hurtBool:
         pygame.draw.rect(surface, Colors.yellow, player.colBox.move(player.pos),0)
@@ -92,7 +89,7 @@ def main():
             #update intents
             playerFSM(player, inputHandler.pressed, inputHandler.previouslyPressed)
 
-            #find contraints
+            #find contraints (i.e l used in time integrator)
             collisionHandler(player)
 
             #update world

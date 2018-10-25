@@ -2,6 +2,7 @@
 import pygame
 
 from Conts import *
+import numpy as np
 
 
 
@@ -10,13 +11,17 @@ class CollisionHandler(object):
     def __init__(self):
         self.worldGeometry = []
 
-        self.worldGeometry.append(pygame.Rect(100.0, 130.0, 20, 40))
+        self.worldGeometry.append(pygame.Rect(100.0, 130.0, 100, 40))
+        self.worldGeometry.append(pygame.Rect(10.0, 70.0, 40, 40))
+        self.worldGeometry.append(pygame.Rect(0.0, 160.0, 300, 40))
 
     def __call__(self, player):
-        #collision with window
+        #in principle, can move full range
         player.Lx = 1
         player.Ly = 1
 
+
+        #for window boundaries
         dv = player.gSpeed*player.gDir[x]*timePerFrameInms
         L = (-player.left + 0) / dv
         if 0 <= L <= 1 and dv<0:
@@ -30,47 +35,100 @@ class CollisionHandler(object):
 
         lx = -1
         lx1 = -1
-        ly = -1
         lx2 = -1
+        ly = -1
+        ly1 = -1
+        ly2 = -1
+        overlap_x=False
+        overlap_y=False
+        dv = 0
+        l = [0,0]
+
+        #player should fall if no collision with ground is found
+        player.onGround = False
 
         for geometry in self.worldGeometry:
 
             lx = -1
             ly = -1
 
-            lx1 = (geometry.right - player.left) / (player.gDir[x]*player.gSpeed*timePerFrameInms)
-            lx2 = (geometry.left - player.right) / (player.gDir[x]*player.gSpeed*timePerFrameInms)
+            overlap_x = False
+            overlap_y = False
+
+            dv = player.gDir[x]*player.gSpeed
+
+            lx1 = (geometry.right - player.left) / (dv*timePerFrameInms)
+            lx2 = (geometry.left - player.right) / (dv*timePerFrameInms)
+
+            # if 0<= lx1 <=1, then the projections overlap at l
+            # let lx1 < lx2, if [lx1,lx2] supset [0,1], then projections overlap
+
             if 0<=lx1<=1 or 0<=lx2<=1:
                 if not (0<=lx2<=1) and player.gDir[x]<0:
                     lx = lx1
-                    colSide = "left"
+                    # geometry.right = player.left
                 elif not (0<=lx1<=1) and player.gDir[x]>0:
                     lx = lx2
-                    colSide = "right"
+                    # geometry.left = player.right
+                else:
+                    # Collision but not in direction of motion
+                    continue
             else:
-                continue
+                l = [lx1,lx2]
+                l.sort()
+                if l[0] > 0 or 1 > l[1]:
+                    continue
+                else:
+                    lx = 1
+                    overlap_x = True
+                    # The boxs' projection will lie 
+                    # within each other for the duration 
+                    # of the fraim.
 
-            """if player.onGround == False:
-                dv_y = player.yJumpSpeed + player.yImpulse
-                ly1 = (geometry.top - player.bottom) / (dv_y*timePerFrameInms)
-                ly2 = (geometry.bottom - player.top) / (dv_y*timePerFrameInms)
-                if 0<=ly1<=1 or 0<=ly2<=1:
-                    if not 0<=ly2<=1 and dv_y<0:
-                        ly = ly1
-                        print "hit top"
-                    elif not 0<=ly1<=1 and dv_y>0:
-                        ly = ly2
-                        print "hit bottom"
+
+            dv = player.yJumpSpeed + gravImpulse*(1 + player.Dgrav)
+
+            ly1 = (geometry.bottom - player.top) / (dv*timePerFrameInms)
+            ly2 = (geometry.top - player.bottom) / (dv*timePerFrameInms)
+            if np.isnan(ly2):
+                ly2 = -ly1
+
+            if 0<=ly1<=1 or 0<=ly2<=1:
+                if not (0<=ly2<=1) and dv <= 0:
+                    ly = ly1
+                    player.startFalling = True
+                    # Collision on top of player, flag falling
+                    # Remove to hug roof
+                elif not (0<=ly1<=1) and dv >= 0:
+                    ly = ly2
+                    player.onGround = True
+                    # Collision on bottom of player, flag landing
                 else:
                     continue
-            elif player.top < geometry.bottom and geometry.top < player.bottom:
-                ly = 0
             else:
-                continue"""
+                l = [ly1,ly2]
+                l.sort()
+                if l[0] > 0 or 1 > l[1]:
+                    continue
+                ly = 1
+                overlap_y = True
+              
+            # This will evaluate true when moving across a surface
+            if overlap_y and overlap_x:
+                player.onGround = True
+                continue
 
-            if player.top < geometry.bottom and geometry.top < player.bottom:
-                ly = 0  
-            
-            if lx != -1 and ly != -1:
+            # This proritises removing y velocity over x
+            # needed so that when a corner is hit, we remove
+            # y velocity but no x, moving onto the platform.
+            # No if will result in being stuck at the corner
+            # If lx!=1 will result in falling down at the corner
+            # This way feels better and is more forgiving.
+            if ly !=1:
+                if ly < player.Ly:
+                    player.Ly = ly
+            else:
+                if lx < player.Lx:
                     player.Lx = lx
-            
+
+        

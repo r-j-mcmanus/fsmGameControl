@@ -95,11 +95,15 @@ class PlayerFSM(object):
                 return True, PlayerFSM.StateID.Jab_1, ()
             if pressed[Actions.jump] and not previouslyPressed[Actions.jump]:
                 return True, PlayerFSM.StateID.Jumping, ()
+            if player.onGround == False:
+                return True, PlayerFSM.StateID.Falling, ()
+
             return False, None, None
 
         def enter(self, player):
             print "enter standing"
             player.gSpeed = 0  
+            player.onGround = True
 
         def exit(self, player):
             pass    
@@ -125,6 +129,8 @@ class PlayerFSM(object):
                 return True, PlayerFSM.StateID.Standing, ()
             if pressed[Actions.attack] and not previouslyPressed[Actions.attack]:
                 return True, PlayerFSM.StateID.RunAttack, ()
+            if player.onGround == False:
+                return True, PlayerFSM.StateID.Falling, ()
 
             return False, None, None
 
@@ -147,6 +153,8 @@ class PlayerFSM(object):
 
         def checkChange(self, player, pressed, previouslyPressed):
             if self.rollTimer.elapsed == self.rollTimer.duration:
+                if player.onGround == False:
+                    print "not on floor as finishing rolling, new state?"
                 if pressed[Actions.left]:
                     return True, PlayerFSM.StateID.Running, (np.array([-1,0]),)
                 if pressed[Actions.right]:
@@ -158,8 +166,6 @@ class PlayerFSM(object):
             print "enter rolling"
             if not np.array_equal(direction,[0,0]):
                 player.gDir = direction
-            else:
-                print "wtf?"
             global timerController 
             timerController.startTimer(self.rollTimer)
             player.gSpeed = PlayerConsts.Roll.maxSpeed
@@ -289,13 +295,14 @@ class PlayerFSM(object):
                 self.highjump = False
 
         def checkChange(self, player, pressed, previouslyPressed):
-            if player.yJumpSpeed >=0:
+            if player.yJumpSpeed >= 0 or player.startFalling:
                 return True, PlayerFSM.StateID.Falling, ()
             return False, None, None
 
         def enter(self, player):
             print "enter jumping"
             player.onGround = False
+            player.startFalling = False
             player.yJumpSpeed = PlayerConsts.Jumping.initialJumpSpeed - player.gDir[y]*player.gSpeed
             player.Dgrav = PlayerConsts.Jumping.highJumpDgrav
             self.highjump = True
@@ -311,9 +318,7 @@ class PlayerFSM(object):
             pass
 
         def checkChange(self, player, pressed, previouslyPressed):
-            if player.pos[y] >= 150:
-                return True, PlayerFSM.StateID.Standing, ()
-            if player.landed:
+            if player.onGround:
                 return True, PlayerFSM.StateID.Standing, ()
 
 
@@ -322,10 +327,10 @@ class PlayerFSM(object):
         def enter(self, player):
             print "enter falling"
             player.Dgrav = 0
+            player.startFalling = False
+            player.onGround = False
 
         def exit(self, player):
-            player.pos[y] = 150
-            player.onGround = True
-            player.landed = False
+            player.yJumpSpeed = 0
             player.Dgrav = -1
 
