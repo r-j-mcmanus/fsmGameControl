@@ -25,6 +25,7 @@ class Player(object):
         self.onGround = True
         self.landed = False
         self.startFalling = False
+        self.graceJumpBool = False
         self.Dgrav = -1
         self.Lx = 1
         self.Ly = 1

@@ -30,3 +30,7 @@ class TimerController:
     def startTimer(self, timer):
         timer.elapsed = 0
         self.activeTimers.append(timer)
+
+    def endTimer(self, timerID):
+        self.timers[timerID].elapsed = self.timers[timerID].duration
+        self.activeTimers.remove(timer)

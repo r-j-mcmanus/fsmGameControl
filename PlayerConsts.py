@@ -5,28 +5,25 @@ timePerFrameInms = 1.0/FPS*1000
 class PlayerConsts:
 	#All times in fraimes
     maxRunSpeed = 0.15
-    maxRunAttackSpeed = 0.3
     class Roll:
         duration = 10 
         cooldown = 10 
         maxSpeed = 0.3
-    class Jab_1:
-    	duration = 26
-    	hitBoxStart = 5
-    	hitBoxEnd = 16
-    class Jab_2:
-    	duration = 29
-    	hitBoxStart =3
-    	hitBoxEnd =19
+    class Jab:
+    	duration =     [26,    29]
+    	hitBoxStart =  [ 5,     3]
+    	hitBoxEnd =    [16,    19]
     class RunAttack:
-    	duration = 20
-    	hitBoxStart =5
-    	hitBoxEnd =15
-        runEnd = 10
+    	duration =     [10,     5,    15]
+    	hitBoxStart =  [ 3,     1,     5] 
+    	hitBoxEnd =    [ 8,     5,    15]
+        runEnd =       [ 5,     3,     0]
+        speed =        [0.2,   0.2,   0.2]
     class Jumping:
         initialJumpSpeed = -0.3
         highJumpDgrav = -0.6
         lowJumpDgrav = -0.2
     class Falling:
-        pass
+        endGracePeriod = 0.2
+        startGracePeriod = 0.1
 
