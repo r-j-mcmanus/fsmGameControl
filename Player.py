@@ -7,14 +7,19 @@ import numpy as np
 
 from Conts import *
 
+class direction:
+    right = 1
+    left = -1
+
 class Player(object):
     def __init__(self):
         self.body = pygame.Rect(0, 0, 10, 10)
         self.colour = Colors.red
         self.stateID = PlayerFSM.StateID.Standing
         self.pos = np.array([50.0, 150.0])
-        self.gDir = np.array([1,0]) # right == 1 or left == -1
-        self.gSpeed = 0 #ground speed
+        self.__dir = direction.right
+        self.gVec = np.array([1,0]) # gVec[0] >=0 for notmalisation
+        self.gSpeed = 0 # ground speed
         self.colBox = pygame.Rect(0, 0, 10, 10)
         self.physColBool = True
         self.hurtbox = pygame.Rect(0, 0, 10, 10)
@@ -37,6 +42,19 @@ class Player(object):
     def hitboxOffset(self):
         return [0.5*((self.gDir[x]+1)*self.colBox.width + (self.gDir[x]-1)*self.hitbox.width),0]
 
+    @property
+    def gDir(self):
+        return self.__dir*self.gVec
+
+    @property
+    def dir(self):
+        return self.__dir
+
+    @dir.setter
+    def dir(self, direction):
+        if direction != 0:
+            self.__dir = direction
+ 
     @property
     def left(self):
         return self.pos[x]

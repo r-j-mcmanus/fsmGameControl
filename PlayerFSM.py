@@ -10,6 +10,17 @@ y = 1
 
 global timerController
 
+class direction:
+    right = 1
+    left = -1
+    noChange = 0
+
+class ChangeResult:
+    def __init__(self, result=False, stateID=None, *stateArgs):
+        self.result = result
+        self.stateID = stateID
+        self.stateArgs = stateArgs
+
 class PlayerFSM(object):
     """
     Will control the state of the player object, making minimal 
@@ -47,7 +58,7 @@ class PlayerFSM(object):
         state = self.states[player.stateID]
         state.internal(player, pressed, previouslyPressed)
         try:
-            changeBool, changeID, chageArgs = state.checkChange(player, pressed, previouslyPressed)
+            changeResult = state.checkChange(player, pressed, previouslyPressed)
         except ValueError:
                 print "ERROR!!"
                 print message
@@ -55,16 +66,16 @@ class PlayerFSM(object):
                 print "not enough values returned in state.checkChange"
                 raise SystemExit
 
-        if changeBool:
+        if changeResult.result:
             state.exit(player)
-            player.stateID = changeID
+            player.stateID = changeResult.stateID
             try:
-                self.states[player.stateID].enter(player, *chageArgs)
+                self.states[player.stateID].enter(player, *changeResult.stateArgs)
             except TypeError, message:
                 print "ERROR!!"
                 print message
                 print "changing to StateID ", player.stateID
-                print "Given chageArgs ", chageArgs
+                print "Given chageArgs ", changeResult.stateArgs
                 raise SystemExit
             except KeyError, message:
                 print "ERROR!"
@@ -82,21 +93,21 @@ class PlayerFSM(object):
 
         def checkChange(self, player, pressed, previouslyPressed):
             if player.onGround == False:
-                return True, PlayerFSM.StateID.Falling, ()
+                return ChangeResult(True, PlayerFSM.StateID.Falling)
             if pressed[Actions.left] and pressed[Actions.dodge]:
-                return True, PlayerFSM.StateID.Rolling, (np.array([-1,0]),)
+                return ChangeResult(True, PlayerFSM.StateID.Rolling, direction.left)
             if pressed[Actions.right] and pressed[Actions.dodge]:
-                return True, PlayerFSM.StateID.Rolling, (np.array([1,0]),)
+                return ChangeResult(True, PlayerFSM.StateID.Rolling, direction.right)
             if pressed[Actions.left]:
-                return True, PlayerFSM.StateID.Running, (np.array([-1,0]),)
+                return ChangeResult(True, PlayerFSM.StateID.Running, direction.left)
             if pressed[Actions.right]:
-                return True, PlayerFSM.StateID.Running, (np.array([1,0]),)
+                return ChangeResult(True, PlayerFSM.StateID.Running, direction.right)
             if pressed[Actions.attack] and not previouslyPressed[Actions.attack]:
-                return True, PlayerFSM.StateID.Jab, (0,) #We enter jab in substate 0
+                return ChangeResult(True, PlayerFSM.StateID.Jab, 0)#We enter jab in substate 0
             if pressed[Actions.jump] and not previouslyPressed[Actions.jump]:
-                return True, PlayerFSM.StateID.Jumping, ()
+                return ChangeResult(True, PlayerFSM.StateID.Jumping, direction.noChange)
 
-            return False, None, None
+            return ChangeResult(False, None)
 
         def enter(self, player):
             print "enter standing"
@@ -112,30 +123,36 @@ class PlayerFSM(object):
 
         def internal(self, player, pressed, previouslyPressed):
             if pressed[Actions.left] and not previouslyPressed[Actions.left]:
-                player.gDir *= -1
+                player.dir = direction.left
                 return
             if pressed[Actions.right] and not previouslyPressed[Actions.right]:
-                player.gDir *= -1
+                player.dir = direction.right
                 return
 
         def checkChange(self, player, pressed, previouslyPressed):
+            # ensuring falling takes priorety
             if player.onGround == False:
-                return True, PlayerFSM.StateID.Falling, ()
-            if pressed[Actions.dodge] and not previouslyPressed[Actions.dodge]:
-                return True, PlayerFSM.StateID.Rolling, ()
-            if pressed[Actions.jump] and not previouslyPressed[Actions.jump]:
-                return True, PlayerFSM.StateID.Jumping, ()
-            if not pressed[Actions.left] and not pressed[Actions.right]:
-                return True, PlayerFSM.StateID.Standing, ()
-            if pressed[Actions.attack] and not previouslyPressed[Actions.attack]:
-                return True, PlayerFSM.StateID.RunAttack, (0,) #We enter running attack in substate 0
+                return ChangeResult(True, PlayerFSM.StateID.Falling)
 
-            return False, None, None
+            # player input actions
+            if pressed[Actions.dodge] and not previouslyPressed[Actions.dodge]:
+                return ChangeResult(True, PlayerFSM.StateID.Rolling, direction.noChange)
+            if pressed[Actions.jump] and not previouslyPressed[Actions.jump]:
+                return ChangeResult(True, PlayerFSM.StateID.Jumping, direction.noChange)#we do not need to change the direction as internal handels it
+            if pressed[Actions.attack] and not previouslyPressed[Actions.attack]:
+                return ChangeResult(True, PlayerFSM.StateID.RunAttack, 0) #We enter running attack in substate 0
+
+
+            # ensuring stoping is the least prefered 
+            if not pressed[Actions.left] and not pressed[Actions.right]:
+                return ChangeResult(True, PlayerFSM.StateID.Standing)
+
+            return ChangeResult(False, None)
 
         def enter(self, player, direction):
             print "enter running"
             player.gSpeed = PlayerConsts.maxRunSpeed
-            player.gDir = direction
+            player.dir = direction
 
         def exit(self, player):
             pass
@@ -154,24 +171,22 @@ class PlayerFSM(object):
                 if player.onGround == False:
                     print "not on floor as finishing rolling, new state?"
                 if pressed[Actions.left]:
-                    return True, PlayerFSM.StateID.Running, (np.array([-1,0]),)
+                    return ChangeResult(True, PlayerFSM.StateID.Running, direction.left)
                 if pressed[Actions.right]:
-                    return True, PlayerFSM.StateID.Running, (np.array([1,0]),)
-                return True, PlayerFSM.StateID.Standing, ()
-            return False, None, None
+                    return ChangeResult(True, PlayerFSM.StateID.Running, direction.right)
+                return ChangeResult(True, PlayerFSM.StateID.Standing)
+            return ChangeResult(False, None)
 
-        def enter(self, player, direction = [0,0]):
+        def enter(self, player, direction):
             print "enter rolling"
-            if not np.array_equal(direction,[0,0]):
-                player.gDir = direction
+            player.dir = direction
             global timerController 
             timerController.startTimer(self.rollTimer)
             player.gSpeed = PlayerConsts.Roll.maxSpeed
             player.hurtBool = False 
 
         def exit(self, player):
-            player.hurtBool = True 
-            #timerController.stopTimer(self.rollTimer)
+            player.hurtBool = True
 
     class Jab(object):
         def __init__(self):
@@ -191,20 +206,20 @@ class PlayerFSM(object):
 
         def checkChange(self, player, pressed, previouslyPressed):
             if player.onGround == False:
-                return True, PlayerFSM.StateID.Falling, ()
+                return ChangeResult(True, PlayerFSM.StateID.Falling)
             if self.attackTimers[self.substateID].elapsed == self.attackTimers[self.substateID].duration:
                 if self.followUpAttackBool:
-                    return True, PlayerFSM.StateID.Jab, (self.substateID+1,)
+                    return ChangeResult(True, PlayerFSM.StateID.Jab, self.substateID+1)
                 if pressed[Actions.left]:
-                    return True, PlayerFSM.StateID.Running, (np.array([-1,0]),)
+                    return ChangeResult(True, PlayerFSM.StateID.Running, direction.left)
                 if pressed[Actions.right]:
-                    return True, PlayerFSM.StateID.Running, (np.array([1,0]),)
-                return True, PlayerFSM.StateID.Standing, ()
+                    return ChangeResult(True, PlayerFSM.StateID.Running, direction.right)
+                return ChangeResult(True, PlayerFSM.StateID.Standing)
             if pressed[Actions.dodge] and not previouslyPressed[Actions.dodge] and pressed[Actions.left]:
-                return True, PlayerFSM.StateID.Rolling, (np.array([-1,0]),)
+                return ChangeResult(True, PlayerFSM.StateID.Rolling, direction.left)
             if pressed[Actions.dodge] and not previouslyPressed[Actions.dodge] and pressed[Actions.right]:
-                return True, PlayerFSM.StateID.Rolling, (np.array([1,0]),)
-            return False, None, None
+                return ChangeResult(True, PlayerFSM.StateID.Rolling, direction.right)
+            return ChangeResult(False, None)
 
         def enter(self, player,substateID):
             print "enter jab", substateID
@@ -239,20 +254,20 @@ class PlayerFSM(object):
 
         def checkChange(self, player, pressed, previouslyPressed):
             if player.onGround == False:
-                return True, PlayerFSM.StateID.Falling, ()
+                return ChangeResult(True, PlayerFSM.StateID.Falling)
             if self.attackTimers[self.substateID].elapsed == self.attackTimers[self.substateID].duration:
                 if self.followUpAttackBool == True:
-                    return True, PlayerFSM.StateID.RunAttack, (self.substateID+1,)
+                    return ChangeResult(True, PlayerFSM.StateID.RunAttack, self.substateID+1)
                 if pressed[Actions.left]:
-                    return True, PlayerFSM.StateID.Running, (np.array([-1,0]),)
+                    return ChangeResult(True, PlayerFSM.StateID.Running, direction.left)
                 if pressed[Actions.right]:
-                    return True, PlayerFSM.StateID.Running, (np.array([1,0]),)
-                return True, PlayerFSM.StateID.Standing, ()
+                    return ChangeResult(True, PlayerFSM.StateID.Running, direction.right)
+                return ChangeResult(True, PlayerFSM.StateID.Standing)
             if pressed[Actions.dodge] and not previouslyPressed[Actions.dodge] and pressed[Actions.left]:
-                return True, PlayerFSM.StateID.Rolling, (np.array([-1,0]),)
+                return ChangeResult(True, PlayerFSM.StateID.Rolling, direction.left)
             if pressed[Actions.dodge] and not previouslyPressed[Actions.dodge] and pressed[Actions.right]:
-                return True, PlayerFSM.StateID.Rolling, (np.array([1,0]),)
-            return False, None, None
+                return ChangeResult(True, PlayerFSM.StateID.Rolling, direction.right)
+            return ChangeResult(False, None)
 
         def enter(self, player,substateID):
             print "enter run attack"
@@ -278,15 +293,12 @@ class PlayerFSM(object):
 
         def checkChange(self, player, pressed, previouslyPressed):
             if player.yJumpSpeed >= 0 or player.startFalling:
-                return True, PlayerFSM.StateID.Falling, ()
-            return False, None, None
+                return ChangeResult(True, PlayerFSM.StateID.Falling)
+            return ChangeResult(False, None)
 
-        def enter(self, player, direction=[0,0]):
+        def enter(self, player, direction = direction.noChange):
             print "enter jumping"
-
-            if not np.array_equal(direction,[0,0]):
-                player.gDir = direction
-
+            player.dir = direction
             player.onGround = False
             player.startFalling = False
             player.yJumpSpeed = PlayerConsts.Jumping.initialJumpSpeed - player.gDir[y]*player.gSpeed
@@ -313,13 +325,13 @@ class PlayerFSM(object):
             if player.onGround:
                 if player.graceJumpBool:
                     if pressed[Actions.left]:
-                        return True, PlayerFSM.StateID.Jumping, (np.array([-1,0]),)
+                        return ChangeResult(True, PlayerFSM.StateID.Jumping, direction.left)
                     if pressed[Actions.right]:
-                        return True, PlayerFSM.StateID.Jumping, (np.array([1,0]),)
+                        return ChangeResult(True, PlayerFSM.StateID.Jumping, direction.right)
                 else:
-                    return True, PlayerFSM.StateID.Standing, ()
+                    return ChangeResult(True, PlayerFSM.StateID.Standing)
 
-            return False, None, None
+            return ChangeResult(False, None)
 
         def enter(self, player):
             print "enter falling"
