@@ -328,6 +328,7 @@ class PlayerFSM(object):
                         return ChangeResult(True, PlayerFSM.StateID.Jumping, direction.left)
                     if pressed[Actions.right]:
                         return ChangeResult(True, PlayerFSM.StateID.Jumping, direction.right)
+                    return ChangeResult(True, PlayerFSM.StateID.Jumping, direction.noChange)
                 else:
                     return ChangeResult(True, PlayerFSM.StateID.Standing)
 

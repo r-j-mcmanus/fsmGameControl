@@ -9,6 +9,7 @@ class TimerController:
         The timers are given a duration of 
     """
     class Timer:
+        __slots__  = "duration", "elapsed"
         def __init__(self, duration):
             self.duration = duration
             self.elapsed = 0
