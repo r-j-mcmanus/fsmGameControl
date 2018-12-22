@@ -20,6 +20,7 @@ class Player(object):
         self.__dir = direction.right
         self.gVec = np.array([1,0]) # gVec[0] >=0 for notmalisation
         self.gSpeed = 0 # ground speed
+        self.aSpeed = 0
         self.colBox = pygame.Rect(0, 0, 10, 10)
         self.physColBool = True
         self.hurtbox = pygame.Rect(0, 0, 10, 10)
@@ -36,12 +37,23 @@ class Player(object):
         self.Ly = 1
         self.vel = np.array([0,0])
 
+        #we use two basis, x, y which are window aligned 
+        #and u,v which are ground aligned
+        #in principle. so for not in practicea
+
     def move(self, x, y):
         self.pos += [x,y]
 
     def hitboxOffset(self):
         return [0.5*((self.gDir[x]+1)*self.colBox.width + (self.gDir[x]-1)*self.hitbox.width),0]
 
+    @property
+    def speed(self):
+        if self.onGround:
+            return self.gSpeed
+        else:
+            return self.aSpeed
+    
     @property
     def gDir(self):
         return self.__dir*self.gVec

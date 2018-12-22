@@ -5,6 +5,8 @@ from PlayerConsts import PlayerConsts
 import numpy as np
 from InputHandler import Actions
 
+from TimerController import TimerIDs
+
 x = 0
 y = 1
 
@@ -33,7 +35,7 @@ class PlayerFSM(object):
         timerController = timerControllerMain
         self.states = {
                         self.StateID.Standing :  PlayerFSM.Standing(),
-                        self.StateID.Jab    :  PlayerFSM.Jab(),
+                        self.StateID.Jab      :  PlayerFSM.Jab(),
                         self.StateID.Rolling  :  PlayerFSM.Rolling(),
                         self.StateID.Running  :  PlayerFSM.Running(),
                         self.StateID.RunAttack:  PlayerFSM.RunAttack(),
@@ -112,7 +114,6 @@ class PlayerFSM(object):
         def enter(self, player):
             print "enter standing"
             player.gSpeed = 0  
-            player.onGround = True
 
         def exit(self, player):
             pass    
@@ -122,12 +123,16 @@ class PlayerFSM(object):
             pass
 
         def internal(self, player, pressed, previouslyPressed):
-            if pressed[Actions.left] and not previouslyPressed[Actions.left]:
-                player.dir = direction.left
-                return
-            if pressed[Actions.right] and not previouslyPressed[Actions.right]:
+            #for chanign direction when running
+            if pressed[Actions.left] and pressed[Actions.right] and not previouslyPressed[Actions.right]:
                 player.dir = direction.right
-                return
+            if pressed[Actions.left] and pressed[Actions.right] and not previouslyPressed[Actions.left]:
+                player.dir = direction.left
+            if pressed[Actions.left] and not pressed[Actions.right] and previouslyPressed[Actions.right]:
+                player.dir = direction.left  
+            if not pressed[Actions.left] and pressed[Actions.right] and previouslyPressed[Actions.left]:
+                player.dir = direction.right  
+                
 
         def checkChange(self, player, pressed, previouslyPressed):
             # ensuring falling takes priorety
@@ -287,6 +292,9 @@ class PlayerFSM(object):
             self.highjump = True;
 
         def internal(self, player, pressed, previouslyPressed):
+            if pressed[Actions.jump] and not previouslyPressed[Actions.jump]:
+                timerController.startTimer(TimerIDs.graceJump)
+                player.graceJumpBool = True
             if not pressed[Actions.jump] and self.highjump:
                 player.Dgrav = PlayerConsts.Jumping.lowJumpDgrav
                 self.highjump = False
@@ -310,14 +318,13 @@ class PlayerFSM(object):
 
     class Falling(object):
         def __init__(self):
-                self.graceEndJumpTimer = timerController.addTimer(PlayerConsts.Falling.endGracePeriod, "endJumpGracePeriod")
-                #self.graceEnterJumpTimer = timerController.addTimer(PlayerConsts.Falling.startGracePeriod, "enterJumpGracePeriod")
+            pass
 
         def internal(self, player, pressed, previouslyPressed):
             if pressed[Actions.jump] and not previouslyPressed[Actions.jump]:
-                timerController.startTimer(self.graceEndJumpTimer)
+                timerController.startTimer(TimerIDs.graceJump)
                 player.graceJumpBool = True
-            if self.graceEndJumpTimer.elapsed == self.graceEndJumpTimer.duration:
+            if timerController[TimerIDs.graceJump].ended():
                 player.graceJumpBool = False
 
 
@@ -344,4 +351,6 @@ class PlayerFSM(object):
             player.yJumpSpeed = 0
             player.Dgrav = -1
             player.graceJumpBool = False
+            player.onGround = True
+            timerController.endTimer(TimerIDs.graceJump)
 

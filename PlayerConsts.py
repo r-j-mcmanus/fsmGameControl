@@ -24,6 +24,6 @@ class PlayerConsts:
         highJumpDgrav = -0.6
         lowJumpDgrav = -0.2
     class Falling:
-        endGracePeriod = 0.2
+        endGracePeriod = 20 # in fraimes
         startGracePeriod = 0.1
 
