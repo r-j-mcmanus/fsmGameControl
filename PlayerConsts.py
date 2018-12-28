@@ -5,6 +5,7 @@ timePerFrameInms = 1.0/FPS*1000
 class PlayerConsts:
 	#All times in fraimes
     maxRunSpeed = 0.15
+    airXAccel = 0.1
     class Roll:
         duration = 10 
         cooldown = 10 
@@ -26,4 +27,6 @@ class PlayerConsts:
     class Falling:
         endGracePeriod = 20 # in fraimes
         startGracePeriod = 0.1
-
+    class Air:
+        xAccel = 0.1
+        resistance = 0.1

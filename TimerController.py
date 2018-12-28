@@ -4,6 +4,13 @@ from PlayerConsts import PlayerConsts
 
 class TimerIDs:
     graceJump = 1
+    jab1 = 2
+    jab2 = 3
+    runAttack1 = 4
+    runAttack2 = 5
+    runAttack3 = 6
+    rollTimer = 7
+    rollCooldown = 8
 
 class TimerController:
     """
@@ -31,8 +38,23 @@ class TimerController:
 
         self.addTimer(PlayerConsts.Falling.endGracePeriod, TimerIDs.graceJump)
 
+        self.addTimer(PlayerConsts.Jab.duration[0], TimerIDs.jab1)
+        self.addTimer(PlayerConsts.Jab.duration[1], TimerIDs.jab2)
+
+        self.addTimer(PlayerConsts.Jab.duration[0], TimerIDs.runAttack1)
+        self.addTimer(PlayerConsts.Jab.duration[1], TimerIDs.runAttack2)
+        self.addTimer(PlayerConsts.Jab.duration[1], TimerIDs.runAttack3)
+
+        self.addTimer(PlayerConsts.Roll.duration, TimerIDs.rollTimer)
+        self.addTimer(PlayerConsts.Roll.cooldown, TimerIDs.rollCooldown)
+
+
     def __getitem__(self,index):
-        return self.timers[index]
+        try:
+            return self.timers[index]
+        except KeyError:
+            print index, "not found in timers"
+            raise SystemExit
 
     def addTimer(self, duration, timerID):
         self.timers[timerID] = self.Timer(duration)
@@ -44,11 +66,19 @@ class TimerController:
                 self.activeTimers.remove(timerID)
 
     def startTimer(self, timerID):
-        self.timers[timerID].elapsed = 0
+        try:
+            self.timers[timerID].elapsed = 0
+        except KeyError:
+            print index,"not found in timers"
+            raise SystemExit
         self.activeTimers.append(timerID)
 
     def endTimer(self, timerID):
-        self.timers[timerID].end()
+        try:
+            self.timers[timerID].end()
+        except KeyError:
+            print index,"not found in timers"
+            raise SystemExit
         if timerID in self.activeTimers:
             self.activeTimers.remove(timerID)
 

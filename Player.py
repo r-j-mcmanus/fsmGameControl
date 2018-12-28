@@ -20,7 +20,6 @@ class Player(object):
         self.__dir = direction.right
         self.gVec = np.array([1,0]) # gVec[0] >=0 for notmalisation
         self.gSpeed = 0 # ground speed
-        self.aSpeed = 0
         self.colBox = pygame.Rect(0, 0, 10, 10)
         self.physColBool = True
         self.hurtbox = pygame.Rect(0, 0, 10, 10)
@@ -37,8 +36,10 @@ class Player(object):
         self.Ly = 1
         self.vel = np.array([0,0])
 
+        self.xAccel = 0
+
         #we use two basis, x, y which are window aligned 
-        #and u,v which are ground aligned
+        #and g, h which are ground aligned
         #in principle. so for not in practicea
 
     def move(self, x, y):

@@ -164,17 +164,15 @@ class PlayerFSM(object):
 
     class Rolling(object):
         def __init__(self):
-            global timerController 
-            self.rollTimer = timerController.addTimer(PlayerConsts.Roll.duration, "rollTimer")
-            self.rollCoolDown = timerController.addTimer(PlayerConsts.Roll.cooldown, "RollCooldown")
+            pass
 
         def internal(self, player, pressed, previouslyPressed):
             pass
 
         def checkChange(self, player, pressed, previouslyPressed):
-            if self.rollTimer.elapsed == self.rollTimer.duration:
+            if timerController[TimerIDs.rollTimer].ended():
                 if player.onGround == False:
-                    print "not on floor as finishing rolling, new state?"
+                    return ChangeResult(True, PlayerFSM.StateID.Falling)
                 if pressed[Actions.left]:
                     return ChangeResult(True, PlayerFSM.StateID.Running, direction.left)
                 if pressed[Actions.right]:
@@ -185,26 +183,25 @@ class PlayerFSM(object):
         def enter(self, player, direction):
             print "enter rolling"
             player.dir = direction
-            global timerController 
-            timerController.startTimer(self.rollTimer)
+            global timerController
+            timerController.startTimer(TimerIDs.rollTimer)
             player.gSpeed = PlayerConsts.Roll.maxSpeed
             player.hurtBool = False 
 
         def exit(self, player):
             player.hurtBool = True
+            player.gSpeed = PlayerConsts.maxRunSpeed
 
     class Jab(object):
-        def __init__(self):
-            global timerController 
-            self.attackTimers = (timerController.addTimer(PlayerConsts.Jab.duration[0], "Jab_1_timer"),
-                timerController.addTimer(PlayerConsts.Jab.duration[1], "Jab_2_timer"))
+        def __init__(self): 
             self.followUpAttackBool = False
             self.substateID = 1
+            self.substateIDtoTimerID = {0: TimerIDs.jab1, 1: TimerIDs.jab2}
 
         def internal(self, player, pressed, previouslyPressed):
-            if self.attackTimers[self.substateID].elapsed == PlayerConsts.Jab.hitBoxStart[self.substateID]:
+            if timerController[self.substateIDtoTimerID[self.substateID]].elapsed == PlayerConsts.Jab.hitBoxStart[self.substateID]:
                 player.hitBool = True
-            if self.attackTimers[self.substateID].elapsed == PlayerConsts.Jab.hitBoxEnd[self.substateID]:
+            if timerController[self.substateIDtoTimerID[self.substateID]].elapsed == PlayerConsts.Jab.hitBoxEnd[self.substateID]:
                 player.hitBool = False
             if self.substateID < 1 and pressed[Actions.attack] and not previouslyPressed[Actions.attack]:
                 self.followUpAttackBool = True
@@ -212,7 +209,7 @@ class PlayerFSM(object):
         def checkChange(self, player, pressed, previouslyPressed):
             if player.onGround == False:
                 return ChangeResult(True, PlayerFSM.StateID.Falling)
-            if self.attackTimers[self.substateID].elapsed == self.attackTimers[self.substateID].duration:
+            if timerController[self.substateIDtoTimerID[self.substateID]].ended():
                 if self.followUpAttackBool:
                     return ChangeResult(True, PlayerFSM.StateID.Jab, self.substateID+1)
                 if pressed[Actions.left]:
@@ -230,7 +227,11 @@ class PlayerFSM(object):
             print "enter jab", substateID
             global timerController 
             self.substateID = substateID
-            timerController.startTimer(self.attackTimers[self.substateID])
+            try:
+                timerController.startTimer(self.substateIDtoTimerID[self.substateID])
+            except KeyError:
+                print "self.substateID not in self.substateIDtoTimerID"
+                raise SystemExit, message
             player.gSpeed = 0
             self.followUpAttackBool = False
 
@@ -240,19 +241,18 @@ class PlayerFSM(object):
 
     class RunAttack(object):
         def __init__(self):
-            global timerController 
-            self.attackTimers = (timerController.addTimer(PlayerConsts.RunAttack.duration[0], "RunAttack_1_timer"),
-                timerController.addTimer(PlayerConsts.RunAttack.duration[1], "RunAttack_2_timer"),
-                timerController.addTimer(PlayerConsts.RunAttack.duration[2], "RunAttack_3_timer"))
             self.followUpAttackBool = False
             self.substateID = 0
+            self.substateIDtoTimerID = {0: TimerIDs.runAttack1, 
+                                        1: TimerIDs.runAttack2, 
+                                        2: TimerIDs.runAttack3}
 
         def internal(self, player, pressed, previouslyPressed):
-            if self.attackTimers[self.substateID].elapsed == PlayerConsts.RunAttack.hitBoxStart[self.substateID]:
+            if timerController[self.substateIDtoTimerID[self.substateID]].elapsed == PlayerConsts.RunAttack.hitBoxStart[self.substateID]:
                 player.hitBool = True
-            if self.attackTimers[self.substateID].elapsed == PlayerConsts.RunAttack.hitBoxEnd[self.substateID]:
+            if timerController[self.substateIDtoTimerID[self.substateID]].elapsed == PlayerConsts.RunAttack.hitBoxEnd[self.substateID]:
                 player.hitBool = False
-            if self.attackTimers[self.substateID].elapsed == PlayerConsts.RunAttack.runEnd[self.substateID]:
+            if timerController[self.substateIDtoTimerID[self.substateID]].elapsed == PlayerConsts.RunAttack.runEnd[self.substateID]:
                 player.gSpeed = 0
             if self.substateID < 2 and pressed[Actions.attack] and not previouslyPressed[Actions.attack]:
                 self.followUpAttackBool = True
@@ -260,7 +260,7 @@ class PlayerFSM(object):
         def checkChange(self, player, pressed, previouslyPressed):
             if player.onGround == False:
                 return ChangeResult(True, PlayerFSM.StateID.Falling)
-            if self.attackTimers[self.substateID].elapsed == self.attackTimers[self.substateID].duration:
+            if timerController[self.substateIDtoTimerID[self.substateID]].ended():
                 if self.followUpAttackBool == True:
                     return ChangeResult(True, PlayerFSM.StateID.RunAttack, self.substateID+1)
                 if pressed[Actions.left]:
@@ -276,10 +276,13 @@ class PlayerFSM(object):
 
         def enter(self, player,substateID):
             print "enter run attack"
-            global timerController 
-            assert 0<=substateID<3
+            global timerController
             self.substateID = substateID
-            timerController.startTimer(self.attackTimers[self.substateID])
+            try:
+                timerController.startTimer(self.substateIDtoTimerID[self.substateID])
+            except KeyError:
+                print "self.substateID not in self.substateIDtoTimerID"
+                raise SystemExit, message
             player.gSpeed = PlayerConsts.RunAttack.speed[self.substateID]
 
         def exit(self, player):
@@ -298,6 +301,16 @@ class PlayerFSM(object):
             if not pressed[Actions.jump] and self.highjump:
                 player.Dgrav = PlayerConsts.Jumping.lowJumpDgrav
                 self.highjump = False
+
+
+            if pressed[Actions.left]:
+                player.xAccel = -PlayerConsts.airXAccel
+                print "accel left"
+            if pressed[Actions.right]:
+                player.xAccel = PlayerConsts.airXAccel
+                print "accel right"
+
+
 
         def checkChange(self, player, pressed, previouslyPressed):
             if player.yJumpSpeed >= 0 or player.startFalling:
@@ -326,6 +339,15 @@ class PlayerFSM(object):
                 player.graceJumpBool = True
             if timerController[TimerIDs.graceJump].ended():
                 player.graceJumpBool = False
+
+
+            if pressed[Actions.left]:
+                player.xAccel = -PlayerConsts.airXAccel
+                print "accel left"
+            if pressed[Actions.right]:
+                player.xAccel = PlayerConsts.airXAccel
+                print "accel right"
+
 
 
         def checkChange(self, player, pressed, previouslyPressed):
