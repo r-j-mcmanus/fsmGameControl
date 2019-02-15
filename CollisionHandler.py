@@ -3,7 +3,10 @@ import pygame
 
 from Conts import *
 import numpy as np
+from PlayerConsts import PlayerConsts
 
+def clamp(nmin, nmax, n):
+    return max(min(n,nmax), nmin)
 
 
 class CollisionHandler(object):
@@ -22,7 +25,14 @@ class CollisionHandler(object):
 
 
         #for window boundaries
-        dv = player.gSpeed*player.gDir[x]*timePerFrameInms
+        if  player.onGround:
+            speed = PlayerConsts.Ground.maxSpeed
+        else:
+            speed = clamp(0,PlayerConsts.Air.maxSpeed, player.gSpeed + player.xImpulse * PlayerConsts.Air.xImpulseMagnitude)
+
+
+        dv = speed * player.gDir[x]*timePerFrameInms
+
         L = (-player.left + 0) / dv
         if 0 <= L <= 1 and dv<0:
             player.Lx = L
@@ -45,7 +55,7 @@ class CollisionHandler(object):
         l = [0,0]
 
         #player should fall if no collision with ground is found
-        player.onGround = False
+        onGround = False
 
         for geometry in self.worldGeometry:
 
@@ -55,7 +65,8 @@ class CollisionHandler(object):
             overlap_x = False
             overlap_y = False
 
-            dv = player.gDir[x]*player.gSpeed
+
+            dv = player.gSpeed * player.gDir[x]
 
             lx1 = (geometry.right - player.left) / (dv*timePerFrameInms)
             lx2 = (geometry.left - player.right) / (dv*timePerFrameInms)
@@ -101,7 +112,7 @@ class CollisionHandler(object):
                     # Remove to hug roof
                 elif not (0<=ly1<=1) and dv >= 0:
                     ly = ly2
-                    player.onGround = True
+                    onGround = True
                     # Collision on bottom of player, flag landing
                 else:
                     continue
@@ -115,7 +126,7 @@ class CollisionHandler(object):
               
             # This will evaluate true when moving across a surface
             if overlap_y and overlap_x:
-                player.onGround = True
+                onGround = True
                 continue
 
             # This proritises removing y velocity over x
@@ -131,4 +142,4 @@ class CollisionHandler(object):
                 if lx < player.Lx:
                     player.Lx = lx
 
-        
+        player.onGround = onGround

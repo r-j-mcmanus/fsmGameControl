@@ -8,6 +8,7 @@ from pygame.locals import QUIT
 import numpy as np
 
 from PlayerFSM import PlayerFSM
+from AIFSM import AIFSM
 from TimerController import TimerController
 from InputHandler import InputHandler
 from CollisionHandler import CollisionHandler
@@ -15,7 +16,7 @@ from Player import Player
 
 from Conts import *
 
-
+from PlayerConsts import *
     
 
 
@@ -28,9 +29,10 @@ def checkQuit():
 """--------------------------------------------------------"""
 
 def timeIntegrator(player):    
+
     player.pos[x] += player.gDir[x]*player.gSpeed*timePerFrameInms*player.Lx
-    player.pos[y] += (player.yJumpSpeed + gravImpulse*(1 + player.Dgrav))*timePerFrameInms*player.Ly
-    player.yJumpSpeed += gravImpulse*(1 + player.Dgrav)
+    player.pos[y] += (player.yJumpSpeed + player.yImpulse)*timePerFrameInms*player.Ly
+    player.yJumpSpeed += player.yImpulse
 
 
 def drawScene(surface, player):
@@ -88,6 +90,8 @@ def main():
 
             #update intents
             playerFSM(player, inputHandler.pressed, inputHandler.previouslyPressed)
+
+            AIFSM()
 
             #find contraints (i.e l used in time integrator)
             collisionHandler(player)

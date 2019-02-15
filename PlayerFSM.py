@@ -7,6 +7,8 @@ from InputHandler import Actions
 
 from TimerController import TimerIDs
 
+from HelperFns import clamp
+
 x = 0
 y = 1
 
@@ -16,6 +18,7 @@ class direction:
     right = 1
     left = -1
     noChange = 0
+    none = 0
 
 class ChangeResult:
     def __init__(self, result=False, stateID=None, *stateArgs):
@@ -302,15 +305,12 @@ class PlayerFSM(object):
                 player.Dgrav = PlayerConsts.Jumping.lowJumpDgrav
                 self.highjump = False
 
-
-            if pressed[Actions.left]:
-                player.xAccel = -PlayerConsts.airXAccel
-                print "accel left"
-            if pressed[Actions.right]:
-                player.xAccel = PlayerConsts.airXAccel
-                print "accel right"
-
-
+            if pressed[Actions.left] and not pressed[Actions.right]:
+                print "jumping left", PlayerConsts.Air.minSpeed, PlayerConsts.Air.maxSpeed, player.gSpeed + direction.left*player.dir*PlayerConsts.Air.xImpulseMagnitude
+                player.gSpeed = clamp(PlayerConsts.Air.minSpeed,PlayerConsts.Air.maxSpeed, player.gSpeed + direction.left*player.dir*PlayerConsts.Air.xImpulseMagnitude)
+            else:
+                if pressed[Actions.right] and not pressed[Actions.left]:
+                    player.gSpeed = clamp(PlayerConsts.Air.minSpeed,PlayerConsts.Air.maxSpeed, player.gSpeed + direction.right*player.dir*PlayerConsts.Air.xImpulseMagnitude)
 
         def checkChange(self, player, pressed, previouslyPressed):
             if player.yJumpSpeed >= 0 or player.startFalling:
@@ -341,14 +341,12 @@ class PlayerFSM(object):
                 player.graceJumpBool = False
 
 
-            if pressed[Actions.left]:
-                player.xAccel = -PlayerConsts.airXAccel
-                print "accel left"
-            if pressed[Actions.right]:
-                player.xAccel = PlayerConsts.airXAccel
-                print "accel right"
-
-
+            if pressed[Actions.left] and not pressed[Actions.right]:
+                print "falling left", PlayerConsts.Air.minSpeed, PlayerConsts.Air.maxSpeed, player.gSpeed + direction.left*player.dir*PlayerConsts.Air.xImpulseMagnitude
+                player.gSpeed = clamp(PlayerConsts.Air.minSpeed,PlayerConsts.Air.maxSpeed, player.gSpeed + direction.left*player.dir*PlayerConsts.Air.xImpulseMagnitude)
+            else:
+                if pressed[Actions.right] and not pressed[Actions.left]:
+                    player.gSpeed = clamp(PlayerConsts.Air.minSpeed,PlayerConsts.Air.maxSpeed, player.gSpeed + direction.right*player.dir*PlayerConsts.Air.xImpulseMagnitude)
 
         def checkChange(self, player, pressed, previouslyPressed):
             if player.onGround:

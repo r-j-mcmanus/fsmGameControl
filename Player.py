@@ -7,6 +7,8 @@ import numpy as np
 
 from Conts import *
 
+from PlayerConsts import *
+
 class direction:
     right = 1
     left = -1
@@ -36,7 +38,8 @@ class Player(object):
         self.Ly = 1
         self.vel = np.array([0,0])
 
-        self.xAccel = 0
+        self.xImpulse = 0
+        self.maxXSpeed = 100
 
         #we use two basis, x, y which are window aligned 
         #and g, h which are ground aligned
@@ -54,7 +57,7 @@ class Player(object):
             return self.gSpeed
         else:
             return self.aSpeed
-    
+
     @property
     def gDir(self):
         return self.__dir*self.gVec
