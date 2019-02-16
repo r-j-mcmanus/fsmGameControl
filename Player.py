@@ -1,7 +1,7 @@
 
 import pygame
 
-from PlayerFSM import PlayerFSM
+from PlayerFSM import StateID
 
 import numpy as np
 
@@ -17,7 +17,7 @@ class Player(object):
     def __init__(self):
         self.body = pygame.Rect(0, 0, 10, 10)
         self.colour = Colors.red
-        self.stateID = PlayerFSM.StateID.Standing
+        self.stateID = StateID.Standing
         self.pos = np.array([50.0, 150.0])
         self.__dir = direction.right
         self.gVec = np.array([1,0]) # gVec[0] >=0 for notmalisation
@@ -33,10 +33,14 @@ class Player(object):
         self.landed = False
         self.startFalling = False
         self.graceJumpBool = False
+        self.followupAttackBool = False
+        self.attackEndBool = False
         self.Dgrav = -1
         self.Lx = 1
         self.Ly = 1
         self.vel = np.array([0,0])
+        self.highJumpBool = True
+        self.changeDirection = 1
 
         self.xImpulse = 0
         self.maxXSpeed = 100
@@ -57,6 +61,10 @@ class Player(object):
             return self.gSpeed
         else:
             return self.aSpeed
+
+    def applyChangeDir(self):
+        self.__dir *= self.changeDirection
+        self.changeDirection = 1
 
     @property
     def gDir(self):

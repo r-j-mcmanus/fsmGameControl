@@ -51,24 +51,25 @@ def drawScene(surface, player):
     pygame.display.update()
 
 def main():
-    global surface
-    global timerController
-
-    timerController = TimerController()
-
-    timeSinceRender = timePerFrameInms+1
 
     pygame.init()
-    pygame.display.set_caption('Window')    
+    pygame.display.set_caption('Window')  
+
+    timerController = TimerController()
+    player = Player()
+    inputHandler = InputHandler()
+
+    playerFSM = PlayerFSM(timerController, player, inputHandler.pressed, inputHandler.previouslyPressed)
+
+    timeSinceRender = timePerFrameInms+1
+  
     
     viewSize = (300,300)
     surface = pygame.display.set_mode(viewSize)
 
     clock = pygame.time.Clock()
 
-    player = Player()
-    playerFSM = PlayerFSM(timerController)
-    inputHandler = InputHandler()
+
     collisionHandler = CollisionHandler()
 
     #main game loop

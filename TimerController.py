@@ -2,15 +2,24 @@
 
 from PlayerConsts import PlayerConsts
 
+class IDMaker():
+    def __init__(self):
+        self.num = 0
+    def __call__(self):
+        self.num+=1
+        return self.num
+
+idMaker = IDMaker()
+
 class TimerIDs:
-    graceJump = 1
-    jab1 = 2
-    jab2 = 3
-    runAttack1 = 4
-    runAttack2 = 5
-    runAttack3 = 6
-    rollTimer = 7
-    rollCooldown = 8
+    graceJump = idMaker()
+    jab1 = idMaker()
+    jab2 = idMaker()
+    jab3 = idMaker()
+    runAttack1 = idMaker()
+    runAttack2 = idMaker()
+    rollTimer = idMaker()
+    rollCooldown = idMaker()
 
 class TimerController:
     """
@@ -22,9 +31,10 @@ class TimerController:
     """
     class Timer:
         __slots__  = "duration", "elapsed"
-        def __init__(self, duration):
+        def __init__(self, duration, startFn):
             self.duration = duration
             self.elapsed = 0
+            self.start = startFn # hack lol
 
         def end(self):
             self.elapsed = self.duration
@@ -32,18 +42,20 @@ class TimerController:
         def ended(self):
             return self.elapsed == self.duration
 
+
+
     def __init__(self):
         self.activeTimers = []
         self.timers = dict()
 
         self.addTimer(PlayerConsts.Falling.endGracePeriod, TimerIDs.graceJump)
 
-        self.addTimer(PlayerConsts.Jab.duration[0], TimerIDs.jab1)
-        self.addTimer(PlayerConsts.Jab.duration[1], TimerIDs.jab2)
+        self.addTimer(PlayerConsts.Jab1.duration, TimerIDs.jab1)
+        self.addTimer(PlayerConsts.Jab2.duration, TimerIDs.jab2)
+        self.addTimer(PlayerConsts.Jab3.duration, TimerIDs.jab3)
 
-        self.addTimer(PlayerConsts.Jab.duration[0], TimerIDs.runAttack1)
-        self.addTimer(PlayerConsts.Jab.duration[1], TimerIDs.runAttack2)
-        self.addTimer(PlayerConsts.Jab.duration[1], TimerIDs.runAttack3)
+        self.addTimer(PlayerConsts.RunAttack1.duration, TimerIDs.runAttack1)
+        self.addTimer(PlayerConsts.RunAttack2.duration, TimerIDs.runAttack2)
 
         self.addTimer(PlayerConsts.Roll.duration, TimerIDs.rollTimer)
         self.addTimer(PlayerConsts.Roll.cooldown, TimerIDs.rollCooldown)
@@ -54,10 +66,10 @@ class TimerController:
             return self.timers[index]
         except KeyError:
             print index, "not found in timers"
-            raise SystemExit
+            raise KeyError
 
     def addTimer(self, duration, timerID):
-        self.timers[timerID] = self.Timer(duration)
+        self.timers[timerID] = self.Timer(duration, lambda : self.startTimer(timerID))
 
     def tick(self):
         for timerID in self.activeTimers:
