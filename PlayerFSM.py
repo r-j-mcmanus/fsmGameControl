@@ -157,7 +157,7 @@ class PlayerFSM(object):
         self.addTransition(StateID.RunAttack1, StateID.Running, self.transFns.checkAttackEnd(), self.transFns.checkAction(Actions.left))
         self.addTransition(StateID.RunAttack1, StateID.Standing, self.transFns.checkAttackEnd())
 
-        self.addTransition(StateID.RunAttack2, StateID.Falling, self.transFns.checkOnGround())
+        self.addTransition(StateID.RunAttack2, StateID.Falling, self.transFns.checkOnGround(False))
         self.addTransition(StateID.RunAttack2, StateID.Rolling, self.transFns.checkAttackEnd(), self.transFns.checkActionPressed(Actions.dodge))
         self.addTransition(StateID.RunAttack2, StateID.Running, self.transFns.checkAttackEnd(), self.transFns.checkAction(Actions.right))
         self.addTransition(StateID.RunAttack2, StateID.Running, self.transFns.checkAttackEnd(), self.transFns.checkAction(Actions.left))
@@ -277,12 +277,16 @@ class StateFactory(object):
             if self.attackTimer.ended():
                 player.attackEndBool = True
 
+            updateChangeDirection(player, pressed, previouslyPressed)
+
+
         def enter(self, player):
             print "enter jab 1"
             self.attackTimer.start()
             player.gSpeed = 0
             player.followUpAttackBool = False
             player.attackEndBool = False
+            player.changeDirection = 1
 
         def exit(self, player):
             player.hitBool = False
@@ -301,6 +305,9 @@ class StateFactory(object):
                 player.followUpAttackBool = True
             if self.attackTimer.ended():
                 player.attackEndBool = True
+
+            updateChangeDirection(player, pressed, previouslyPressed)
+
 
         def enter(self, player):
             print "enter jab 2"
@@ -326,6 +333,9 @@ class StateFactory(object):
                 player.followUpAttackBool = True
             if self.attackTimer.ended():
                 player.attackEndBool = True
+
+            updateChangeDirection(player, pressed, previouslyPressed)
+
 
         def enter(self, player):
             print "enter jab 3"
@@ -355,11 +365,16 @@ class StateFactory(object):
             if self.attackTimer.ended():
                 player.attackEndBool = True
 
+            updateChangeDirection(player, pressed, previouslyPressed)
+
+
         def enter(self, player):
             print "enter runAttack 1"
             self.attackTimer.start()
             player.followUpAttackBool = False
+            player.attackEndBool = False
             player.gSpeed = PlayerConsts.RunAttack1.speed
+            player.changeDirection = 1
 
         def exit(self, player):
             player.hitBool = False
@@ -378,12 +393,16 @@ class StateFactory(object):
             if self.attackTimer.elapsed == PlayerConsts.RunAttack2.runEnd:
                 player.gSpeed = 0
             if self.attackTimer.ended():
-                player.followUpAttackBool = True
+                player.attackEndBool = True
+
+            updateChangeDirection(player, pressed, previouslyPressed)
+
 
         def enter(self, player):
             print "enter runAttack 2"
             self.attackTimer.start()
             player.followUpAttackBool = False
+            player.attackEndBool = False
             player.gSpeed = PlayerConsts.RunAttack2.speed
 
         def exit(self, player):
