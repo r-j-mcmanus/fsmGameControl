@@ -79,8 +79,8 @@ class PlayerFSM(object):
 
                     }
 
-        self.transFns = self.TransFns()
-        self.populateStateTransitions(player, pressed, previouslyPressed)
+        self.transFns = self.TransFns(player, pressed, previouslyPressed)
+        self.populateStateTransitions()
 
     def __call__(self, player, pressed, previouslyPressed):
         self.messages = []
@@ -111,101 +111,116 @@ class PlayerFSM(object):
         assert endStateID in self.states.keys(), "endStateID %s not in dict of states" % endStateID
         self.stateTransitions[startStateID].append(self.Transition(endStateID,transitionFn))
 
-    def populateStateTransitions(self, player, pressed, previouslyPressed):
+    def populateStateTransitions(self):
         """Note that the order we add transitions is the order they are checked, and first one true is the result"""
-        self.addTransition(StateID.Standing, StateID.Falling, self.transFns.checkOnGround(player, False))
-        self.addTransition(StateID.Standing, StateID.Rolling, self.transFns.checkActionPressed(Actions.dodge, pressed, previouslyPressed))
-        self.addTransition(StateID.Standing, StateID.Running, self.transFns.checkActionPressed(Actions.right, pressed, previouslyPressed))
-        self.addTransition(StateID.Standing, StateID.Running, self.transFns.checkActionPressed(Actions.left, pressed, previouslyPressed))
-        self.addTransition(StateID.Standing, StateID.Jab1, self.transFns.checkAction(Actions.attack, pressed))
-        self.addTransition(StateID.Standing, StateID.Jumping, self.transFns.checkActionPressed(Actions.jump, pressed, previouslyPressed))
+        self.addTransition(StateID.Standing, StateID.Falling, self.transFns.checkOnGround(False))
+        self.addTransition(StateID.Standing, StateID.Rolling, self.transFns.checkActionPressed(Actions.dodge))
+        self.addTransition(StateID.Standing, StateID.Running, self.transFns.checkActionPressed(Actions.right))
+        self.addTransition(StateID.Standing, StateID.Running, self.transFns.checkActionPressed(Actions.left))
+        self.addTransition(StateID.Standing, StateID.Jab1, self.transFns.checkAction(Actions.attack))
+        self.addTransition(StateID.Standing, StateID.Jumping, self.transFns.checkActionPressed(Actions.jump))
 
-        self.addTransition(StateID.Running, StateID.Falling, self.transFns.checkOnGround(player, False))
-        self.addTransition(StateID.Running, StateID.Rolling, self.transFns.checkActionPressed(Actions.dodge, pressed, previouslyPressed))
-        self.addTransition(StateID.Running, StateID.RunAttack1, self.transFns.checkAction(Actions.attack, pressed))
-        self.addTransition(StateID.Running, StateID.Jumping, self.transFns.checkActionPressed(Actions.jump, pressed, previouslyPressed))
-        self.addTransition(StateID.Running, StateID.Standing, self.transFns.checkAction(Actions.right, pressed, False), self.transFns.checkAction(Actions.left, pressed, False))
+        self.addTransition(StateID.Running, StateID.Falling, self.transFns.checkOnGround(False))
+        self.addTransition(StateID.Running, StateID.Rolling, self.transFns.checkActionPressed(Actions.dodge))
+        self.addTransition(StateID.Running, StateID.RunAttack1, self.transFns.checkAction(Actions.attack))
+        self.addTransition(StateID.Running, StateID.Jumping, self.transFns.checkActionPressed(Actions.jump))
+        self.addTransition(StateID.Running, StateID.Standing, self.transFns.checkAction(Actions.right, False), self.transFns.checkAction(Actions.left, False))
 
-        self.addTransition(StateID.Rolling, StateID.Falling, self.transFns.checkDodging(player, False), self.transFns.checkOnGround(player, False))
-        self.addTransition(StateID.Rolling, StateID.Running, self.transFns.checkDodging(player, False), self.transFns.checkActionPressed(Actions.right, pressed, previouslyPressed))
-        self.addTransition(StateID.Rolling, StateID.Running, self.transFns.checkDodging(player, False), self.transFns.checkActionPressed(Actions.left, pressed, previouslyPressed))
-        self.addTransition(StateID.Rolling, StateID.Standing, self.transFns.checkDodging(player, False))
+        self.addTransition(StateID.Rolling, StateID.Falling, self.transFns.checkDodging(False), self.transFns.checkOnGround(False))
+        self.addTransition(StateID.Rolling, StateID.Running, self.transFns.checkDodging(False), self.transFns.checkAction(Actions.right))
+        self.addTransition(StateID.Rolling, StateID.Running, self.transFns.checkDodging(False), self.transFns.checkAction(Actions.left))
+        self.addTransition(StateID.Rolling, StateID.Standing, self.transFns.checkDodging(False))
 
-        self.addTransition(StateID.Jab1, StateID.Falling, self.transFns.checkOnGround(player, False))
-        self.addTransition(StateID.Jab1, StateID.Jab2, self.transFns.checkAttackEnd(player), self.transFns.checkFollowupAttack(player))
-        self.addTransition(StateID.Jab1, StateID.Rolling, self.transFns.checkAttackEnd(player), self.transFns.checkActionPressed(Actions.dodge, pressed, previouslyPressed))
-        self.addTransition(StateID.Jab1, StateID.Running, self.transFns.checkAttackEnd(player), self.transFns.checkAction(Actions.right, pressed), self.transFns.checkAction(Actions.left, pressed))
-        self.addTransition(StateID.Jab1, StateID.Standing, self.transFns.checkAttackEnd(player), self.transFns.checkAction(Actions.right, pressed, False), self.transFns.checkAction(Actions.left, pressed, False))
+        self.addTransition(StateID.Jab1, StateID.Falling, self.transFns.checkOnGround(False))
+        self.addTransition(StateID.Jab1, StateID.Jab2, self.transFns.checkAttackEnd(), self.transFns.checkFollowupAttack())
+        self.addTransition(StateID.Jab1, StateID.Rolling, self.transFns.checkAttackEnd(), self.transFns.checkActionPressed(Actions.dodge))
+        self.addTransition(StateID.Jab1, StateID.Running, self.transFns.checkAttackEnd(), self.transFns.checkAction(Actions.right), self.transFns.checkAction(Actions.left))
+        self.addTransition(StateID.Jab1, StateID.Standing, self.transFns.checkAttackEnd())
 
-        self.addTransition(StateID.Jab2, StateID.Falling, self.transFns.checkAttackEnd(player), self.transFns.checkOnGround(player, False))
-        self.addTransition(StateID.Jab2, StateID.Jab3, self.transFns.checkAttackEnd(player), self.transFns.checkFollowupAttack(player))
-        self.addTransition(StateID.Jab2, StateID.Rolling, self.transFns.checkAttackEnd(player), self.transFns.checkActionPressed(Actions.dodge, pressed, previouslyPressed))
-        self.addTransition(StateID.Jab2, StateID.Running, self.transFns.checkAttackEnd(player), self.transFns.checkAction(Actions.right, pressed))
-        self.addTransition(StateID.Jab2, StateID.Running, self.transFns.checkAttackEnd(player), self.transFns.checkAction(Actions.left, pressed))
-        self.addTransition(StateID.Jab2, StateID.Standing, self.transFns.checkAttackEnd(player), self.transFns.checkAction(Actions.right, pressed, False), self.transFns.checkAction(Actions.left, pressed, False))
+        self.addTransition(StateID.Jab2, StateID.Falling, self.transFns.checkAttackEnd(), self.transFns.checkOnGround(False))
+        self.addTransition(StateID.Jab2, StateID.Jab3, self.transFns.checkAttackEnd(), self.transFns.checkFollowupAttack())
+        self.addTransition(StateID.Jab2, StateID.Rolling, self.transFns.checkAttackEnd(), self.transFns.checkActionPressed(Actions.dodge))
+        self.addTransition(StateID.Jab2, StateID.Running, self.transFns.checkAttackEnd(), self.transFns.checkAction(Actions.right))
+        self.addTransition(StateID.Jab2, StateID.Running, self.transFns.checkAttackEnd(), self.transFns.checkAction(Actions.left))
+        self.addTransition(StateID.Jab2, StateID.Standing, self.transFns.checkAttackEnd())
 
-        self.addTransition(StateID.Jab3, StateID.Falling, self.transFns.checkAttackEnd(player), self.transFns.checkOnGround(player, False))
-        self.addTransition(StateID.Jab3, StateID.Rolling, self.transFns.checkAttackEnd(player), self.transFns.checkActionPressed(Actions.dodge, pressed, previouslyPressed))
-        self.addTransition(StateID.Jab3, StateID.Running, self.transFns.checkAttackEnd(player), self.transFns.checkAction(Actions.right, pressed))
-        self.addTransition(StateID.Jab3, StateID.Running, self.transFns.checkAttackEnd(player), self.transFns.checkAction(Actions.left, pressed))
-        self.addTransition(StateID.Jab3, StateID.Standing, self.transFns.checkAttackEnd(player), self.transFns.checkAction(Actions.right, pressed, False), self.transFns.checkAction(Actions.left, pressed, False))
+        self.addTransition(StateID.Jab3, StateID.Falling, self.transFns.checkAttackEnd(), self.transFns.checkOnGround(False))
+        self.addTransition(StateID.Jab3, StateID.Rolling, self.transFns.checkAttackEnd(), self.transFns.checkActionPressed(Actions.dodge))
+        self.addTransition(StateID.Jab3, StateID.Running, self.transFns.checkAttackEnd(), self.transFns.checkAction(Actions.right))
+        self.addTransition(StateID.Jab3, StateID.Running, self.transFns.checkAttackEnd(), self.transFns.checkAction(Actions.left))
+        self.addTransition(StateID.Jab3, StateID.Standing, self.transFns.checkAttackEnd())
 
-        self.addTransition(StateID.RunAttack1, StateID.Falling, self.transFns.checkOnGround(player, False))
-        self.addTransition(StateID.RunAttack1, StateID.RunAttack2, self.transFns.checkAttackEnd(player),  self.transFns.checkFollowupAttack(player))
-        self.addTransition(StateID.RunAttack1, StateID.Rolling, self.transFns.checkAttackEnd(player), self.transFns.checkActionPressed(Actions.dodge, pressed, previouslyPressed))
-        self.addTransition(StateID.RunAttack1, StateID.Running, self.transFns.checkAttackEnd(player), self.transFns.checkAction(Actions.right, pressed))
-        self.addTransition(StateID.RunAttack1, StateID.Running, self.transFns.checkAttackEnd(player), self.transFns.checkAction(Actions.left, pressed))
-        self.addTransition(StateID.RunAttack1, StateID.Standing, self.transFns.checkAttackEnd(player), self.transFns.checkAction(Actions.right, pressed, False), self.transFns.checkAction(Actions.left, pressed, False))
+        self.addTransition(StateID.RunAttack1, StateID.Falling, self.transFns.checkOnGround(False))
+        self.addTransition(StateID.RunAttack1, StateID.RunAttack2, self.transFns.checkAttackEnd(),  self.transFns.checkFollowupAttack())
+        self.addTransition(StateID.RunAttack1, StateID.Rolling, self.transFns.checkAttackEnd(), self.transFns.checkActionPressed(Actions.dodge))
+        self.addTransition(StateID.RunAttack1, StateID.Running, self.transFns.checkAttackEnd(), self.transFns.checkAction(Actions.right))
+        self.addTransition(StateID.RunAttack1, StateID.Running, self.transFns.checkAttackEnd(), self.transFns.checkAction(Actions.left))
+        self.addTransition(StateID.RunAttack1, StateID.Standing, self.transFns.checkAttackEnd())
 
-        self.addTransition(StateID.RunAttack2, StateID.Falling, self.transFns.checkOnGround(player, False))
-        self.addTransition(StateID.RunAttack2, StateID.Rolling, self.transFns.checkAttackEnd(player), self.transFns.checkActionPressed(Actions.dodge, pressed, previouslyPressed))
-        self.addTransition(StateID.RunAttack2, StateID.Running, self.transFns.checkAttackEnd(player), self.transFns.checkAction(Actions.right, pressed))
-        self.addTransition(StateID.RunAttack2, StateID.Running, self.transFns.checkAttackEnd(player), self.transFns.checkAction(Actions.left, pressed))
-        self.addTransition(StateID.RunAttack2, StateID.Standing, self.transFns.checkAttackEnd(player), self.transFns.checkAction(Actions.right, pressed, False), self.transFns.checkAction(Actions.left, pressed, False))
+        self.addTransition(StateID.RunAttack2, StateID.Falling, self.transFns.checkOnGround())
+        self.addTransition(StateID.RunAttack2, StateID.Rolling, self.transFns.checkAttackEnd(), self.transFns.checkActionPressed(Actions.dodge))
+        self.addTransition(StateID.RunAttack2, StateID.Running, self.transFns.checkAttackEnd(), self.transFns.checkAction(Actions.right))
+        self.addTransition(StateID.RunAttack2, StateID.Running, self.transFns.checkAttackEnd(), self.transFns.checkAction(Actions.left))
+        self.addTransition(StateID.RunAttack2, StateID.Standing, self.transFns.checkAttackEnd())
 
-        self.addTransition(StateID.Jumping, StateID.Falling,self.transFns.checkFalling(player))
+        self.addTransition(StateID.Jumping, StateID.Falling,self.transFns.checkFalling())
 
-        self.addTransition(StateID.Falling, StateID.Jumping, self.transFns.checkGraceJump(player), self.transFns.checkOnGround(player))
-        self.addTransition(StateID.Falling, StateID.Running, self.transFns.checkOnGround(player), self.transFns.checkAction(Actions.left, pressed))
-        self.addTransition(StateID.Falling, StateID.Running, self.transFns.checkOnGround(player), self.transFns.checkAction(Actions.right, pressed))
-        self.addTransition(StateID.Falling, StateID.Standing, self.transFns.checkOnGround(player))
+        self.addTransition(StateID.Falling, StateID.Jumping, self.transFns.checkGraceJump(), self.transFns.checkOnGround())
+        self.addTransition(StateID.Falling, StateID.Running, self.transFns.checkOnGround(), self.transFns.checkAction(Actions.right))
+        self.addTransition(StateID.Falling, StateID.Running, self.transFns.checkOnGround(), self.transFns.checkAction(Actions.left))
+        self.addTransition(StateID.Falling, StateID.Standing, self.transFns.checkOnGround())
 
 
     class TransFns:
-        def checkOnGround(self, player, eval = True):
-            return lambda : player.onGround == eval
-        def checkGraceJump(self, player, eval = True):
-            return lambda : player.graceJumpBool == eval
-        def checkFollowupAttack(self, player, eval = True):
-            return lambda : player.followupAttackBool == eval
-        def checkAttackEnd(self, player, eval = True):
-            return lambda : player.attackEndBool == eval
-        def checkDodging(self, player, eval = True):
-            return lambda : player.dodgingBool == eval
-        def checkAction(self, action, pressed, eval = True):
-            return lambda : pressed[action] == eval
-        def checkActionPressed(self, action, pressed, previouslyPressed, eval = True):
-            return lambda : (pressed[action] and not previouslyPressed[action]) == eval
-        def checkActionHeld(self, action, pressed, previouslyPressed, eval = True):
-            return lambda : (pressed[action] and previouslyPressed[action]) == eval
-        def checkFalling(self, player, eval = True):
-            return lambda : (player.yJumpSpeed >= 0 or player.startFalling) == eval
+        def __init__(self, player, pressed, previouslyPressed):
+            self.checkOnGround = lambda eval = True : lambda : player.onGround == eval
+            self.checkGraceJump = lambda eval = True : lambda :player.graceJumpBool == eval
+            self.checkFollowupAttack = lambda eval = True : lambda : player.followUpAttackBool == eval
+            self.checkAttackEnd = lambda eval = True : lambda : player.attackEndBool == eval
+            self.checkDodging = lambda eval = True : lambda : player.dodgingBool == eval
+            self.checkAction = lambda action, eval = True : lambda : pressed[action] == eval
+            self.checkActionPressed = lambda action, eval = True : lambda : (pressed[action] and not previouslyPressed[action]) == eval
+            self.checkActionHeld = lambda  action, eval = True: lambda : (pressed[action] and previouslyPressed[action]) == eval
+            self.checkFalling =  lambda eval = True: lambda : (player.yJumpSpeed >= 0 or player.startFalling) == eval
+
+
+def updateChangeDirection(player, pressed, previouslyPressed):
+    if pressed[Actions.left] and not previouslyPressed[Actions.left] and player.dir != direction.left:
+        player.changeDirection *= -1
+    if not pressed[Actions.left] and previouslyPressed[Actions.left] and player.dir != direction.left:
+        player.changeDirection *= -1
+    if pressed[Actions.right] and not previouslyPressed[Actions.right] and player.dir != direction.right:
+        player.changeDirection *= -1
+    if not pressed[Actions.right] and previouslyPressed[Actions.right] and player.dir != direction.right:
+        player.changeDirection *= -1
+
+def updateDirection(player, pressed, previouslyPressed):
+    if pressed[Actions.left] and not previouslyPressed[Actions.left]:
+        player.dir = direction.left
+    if not pressed[Actions.left] and previouslyPressed[Actions.left] and pressed[Actions.right]:
+        player.dir = direction.right
+    if pressed[Actions.right] and not previouslyPressed[Actions.right]:
+        player.dir = direction.right
+    if not pressed[Actions.right] and previouslyPressed[Actions.right] and pressed[Actions.left]:
+        player.dir = direction.left
+
 
 class StateFactory(object):
+    
+
     class Standing(object):
         def __init__(self):
             pass
 
         def internal(self, player, pressed, previouslyPressed):
-            if pressed[Actions.left] and not previouslyPressed[Actions.left]:
-                player.dir = direction.left
-            if pressed[Actions.right] and not previouslyPressed[Actions.right]:
-                player.dir = direction.right
+            updateDirection(player, pressed, previouslyPressed)
+
 
         def enter(self, player):
             print "enter standing"
             player.gSpeed = 0  
             player.changeDirection = 1
+            player.applyChangeDir()
 
         def exit(self, player):
             pass    
@@ -215,11 +230,7 @@ class StateFactory(object):
             pass
 
         def internal(self, player, pressed, previouslyPressed):
-            #for chanign direction when running
-            if pressed[Actions.left] and not previouslyPressed[Actions.left]:
-                player.dir = direction.left
-            if pressed[Actions.right] and not previouslyPressed[Actions.right]:
-                player.dir = direction.right
+            updateDirection(player, pressed, previouslyPressed)
 
         def enter(self, player):
             print "enter running"
@@ -237,10 +248,7 @@ class StateFactory(object):
             if self.rollTimer.ended():
                 player.dodgingBool = False
 
-            if pressed[Actions.left] and not previouslyPressed[Actions.left]:
-                player.changeDirection *= -1
-            if pressed[Actions.right] and not previouslyPressed[Actions.right]:
-                player.changeDirection *= -1
+            updateChangeDirection(player, pressed, previouslyPressed)
 
         def enter(self, player):
             print "enter rolling"
@@ -257,114 +265,131 @@ class StateFactory(object):
 
     class Jab1(object):
         def __init__(self, timerController):
-            self.jabTimer = timerController[TimerIDs.jab1]
+            self.attackTimer = timerController[TimerIDs.jab1]
 
         def internal(self, player, pressed, previouslyPressed):
-            if self.jabTimer.elapsed == PlayerConsts.Jab1.hitBoxStart:
+            if self.attackTimer.elapsed == PlayerConsts.Jab1.hitBoxStart:
                 player.hitBool = True
-            if self.jabTimer.elapsed == PlayerConsts.Jab1.hitBoxEnd:
+            if self.attackTimer.elapsed == PlayerConsts.Jab1.hitBoxEnd:
                 player.hitBool = False
             if pressed[Actions.attack] and not previouslyPressed[Actions.attack]:
-                player.followUpAttack = True
+                player.followUpAttackBool = True
+            if self.attackTimer.ended():
+                player.attackEndBool = True
 
         def enter(self, player):
             print "enter jab 1"
-            self.jabTimer.start()
+            self.attackTimer.start()
             player.gSpeed = 0
-            player.followUpAttack = False
+            player.followUpAttackBool = False
+            player.attackEndBool = False
 
         def exit(self, player):
             player.hitBool = False
-            player.followUpAttack = False
+            player.followUpAttackBool = False
 
     class Jab2(object):
         def __init__(self, timerController):
-            self.jabTimer = timerController[TimerIDs.jab2]
+            self.attackTimer = timerController[TimerIDs.jab2]
 
         def internal(self, player, pressed, previouslyPressed):
-            if self.jabTimer.elapsed == PlayerConsts.Jab2.hitBoxStart:
+            if self.attackTimer.elapsed == PlayerConsts.Jab2.hitBoxStart:
                 player.hitBool = True
-            if self.jabTimer.elapsed == PlayerConsts.Jab2.hitBoxEnd:
+            if self.attackTimer.elapsed == PlayerConsts.Jab2.hitBoxEnd:
                 player.hitBool = False
             if pressed[Actions.attack] and not previouslyPressed[Actions.attack]:
-                player.followUpAttack = True
+                player.followUpAttackBool = True
+            if self.attackTimer.ended():
+                player.attackEndBool = True
 
         def enter(self, player):
             print "enter jab 2"
-            self.jabTimer.start()
+            self.attackTimer.start()
             player.gSpeed = 0
-            player.followUpAttack = False
+            player.followUpAttackBool = False
+            player.attackEndBool = False
 
         def exit(self, player):
             player.hitBool = False
-            player.followUpAttack = False
+            player.followUpAttackBool = False
 
     class Jab3(object):
         def __init__(self, timerController):
-            self.jabTimer = timerController[TimerIDs.jab3]
+            self.attackTimer = timerController[TimerIDs.jab3]
 
         def internal(self, player, pressed, previouslyPressed):
-            if self.jabTimer.elapsed == PlayerConsts.Jab3.hitBoxStart:
+            if self.attackTimer.elapsed == PlayerConsts.Jab3.hitBoxStart:
                 player.hitBool = True
-            if self.jabTimer.elapsed == PlayerConsts.Jab3.hitBoxEnd:
+            if self.attackTimer.elapsed == PlayerConsts.Jab3.hitBoxEnd:
                 player.hitBool = False
             if pressed[Actions.attack] and not previouslyPressed[Actions.attack]:
-                player.followUpAttack = True
+                player.followUpAttackBool = True
+            if self.attackTimer.ended():
+                player.attackEndBool = True
 
         def enter(self, player):
             print "enter jab 3"
-            self.jabTimer.start()
+            self.attackTimer.start()
             player.gSpeed = 0
-            player.followUpAttack = False
+            player.followUpAttackBool = False
+            player.attackEndBool = False
 
         def exit(self, player):
             player.hitBool = False
-            player.followUpAttack = False
+            player.followUpAttackBool = False
 
 
     class RunAttack1(object):
         def __init__(self, timerController):
-            self.jabTimer = timerController[TimerIDs.runAttack1]
+            self.attackTimer = timerController[TimerIDs.runAttack1]
 
         def internal(self, player, pressed, previouslyPressed):
-            if self.jabTimer.elapsed == PlayerConsts.RunAttack1.hitBoxStart:
+            if self.attackTimer.elapsed == PlayerConsts.RunAttack1.hitBoxStart:
                 player.hitBool = True
-            if self.jabTimer.elapsed == PlayerConsts.RunAttack1.hitBoxEnd:
+            if self.attackTimer.elapsed == PlayerConsts.RunAttack1.hitBoxEnd:
                 player.hitBool = False
-            if self.jabTimer.elapsed == PlayerConsts.RunAttack1.runEnd:
+            if self.attackTimer.elapsed == PlayerConsts.RunAttack1.runEnd:
                 player.gSpeed = 0
             if pressed[Actions.attack] and not previouslyPressed[Actions.attack]:
-                player.followUpAttack = True
+                player.followUpAttackBool = True
+            if self.attackTimer.ended():
+                player.attackEndBool = True
 
         def enter(self, player):
-            print "enter run attack"
-            self.jabTimer.start()
-            player.gSpeed = PlayerConsts.RunAttack.speed[self.substateID]
+            print "enter runAttack 1"
+            self.attackTimer.start()
+            player.followUpAttackBool = False
+            player.gSpeed = PlayerConsts.RunAttack1.speed
 
         def exit(self, player):
             player.hitBool = False
-            player.followUpAttack = False
+            player.followUpAttackBool = False
+            player.attackEndBool = False
 
     class RunAttack2(object):
         def __init__(self, timerController):
-            self.jabTimer = timerController[TimerIDs.runAttack2]
+            self.attackTimer = timerController[TimerIDs.runAttack2]
 
         def internal(self, player, pressed, previouslyPressed):
-            if self.jabTimer.elapsed == PlayerConsts.RunAttack2.hitBoxStart:
+            if self.attackTimer.elapsed == PlayerConsts.RunAttack2.hitBoxStart:
                 player.hitBool = True
-            if self.jabTimer.elapsed == PlayerConsts.RunAttack2.hitBoxEnd:
+            if self.attackTimer.elapsed == PlayerConsts.RunAttack2.hitBoxEnd:
                 player.hitBool = False
-            if self.jabTimer.elapsed == PlayerConsts.RunAttack2.runEnd:
+            if self.attackTimer.elapsed == PlayerConsts.RunAttack2.runEnd:
                 player.gSpeed = 0
+            if self.attackTimer.ended():
+                player.followUpAttackBool = True
 
         def enter(self, player):
-            print "enter run attack"
-            self.jabTimer.start()
-            player.gSpeed = PlayerConsts.RunAttack.speed[self.substateID]
+            print "enter runAttack 2"
+            self.attackTimer.start()
+            player.followUpAttackBool = False
+            player.gSpeed = PlayerConsts.RunAttack2.speed
 
         def exit(self, player):
             player.hitBool = False
             player.followUpAttack = False
+            player.followUpAttackBool = False
 
     class Jumping(object):
         """ need to fix moving when jumping from still chanign landing direction """
@@ -385,11 +410,7 @@ class StateFactory(object):
             if pressed[Actions.right] and not pressed[Actions.left]:
                 player.gSpeed = clamp(PlayerConsts.Air.minSpeed, PlayerConsts.Air.maxSpeed, player.gSpeed + direction.right*player.dir*PlayerConsts.Air.xImpulseMagnitude)
 
-            if pressed[Actions.left] and not previouslyPressed[Actions.left]:
-                player.changeDirection *= -1
-            if pressed[Actions.right] and not previouslyPressed[Actions.right]:
-                player.changeDirection *= -1
-
+            updateChangeDirection(player, pressed, previouslyPressed)
 
         def enter(self, player):
             print "enter jumping"
@@ -423,10 +444,7 @@ class StateFactory(object):
                 if pressed[Actions.right] and not pressed[Actions.left]:
                     player.gSpeed = clamp(PlayerConsts.Air.minSpeed,PlayerConsts.Air.maxSpeed, player.gSpeed + direction.right*player.dir*PlayerConsts.Air.xImpulseMagnitude)
 
-            if pressed[Actions.left] and not previouslyPressed[Actions.left]:
-                player.changeDirection *= -1
-            if pressed[Actions.right] and not previouslyPressed[Actions.right]:
-                player.changeDirection *= -1
+            updateChangeDirection(player, pressed, previouslyPressed)
 
         def enter(self, player):
             print "enter falling"

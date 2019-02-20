@@ -33,7 +33,7 @@ class Player(object):
         self.landed = False
         self.startFalling = False
         self.graceJumpBool = False
-        self.followupAttackBool = False
+        self.followUpAttackBool = False
         self.attackEndBool = False
         self.Dgrav = -1
         self.Lx = 1
