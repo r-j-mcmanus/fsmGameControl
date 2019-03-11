@@ -14,17 +14,17 @@ class direction:
     left = -1
 
 class Player(object):
-    def __init__(self):
-        self.body = pygame.Rect(0, 0, 10, 10)
+    def __init__(self, bodyRect = pygame.Rect(0, 0, 10, 10), pos = np.array([50.0, 150.0])):
+        self.body = bodyRect
         self.colour = Colors.red
         self.stateID = StateID.Standing
-        self.pos = np.array([50.0, 150.0])
+        self.pos = np.array(pos)
         self.__dir = direction.right
         self.gVec = np.array([1,0]) # gVec[0] >=0 for notmalisation
         self.gSpeed = 0 # ground speed
-        self.colBox = pygame.Rect(0, 0, 10, 10)
+        self.colBox = bodyRect
         self.physColBool = True
-        self.hurtbox = pygame.Rect(0, 0, 10, 10)
+        self.hurtbox = bodyRect
         self.hurtBool = True
         self.hitBool = False
         self.hitbox = pygame.Rect(0, 3, 10, 4)
@@ -48,6 +48,15 @@ class Player(object):
         #we use two basis, x, y which are window aligned 
         #and g, h which are ground aligned
         #in principle. so for not in practicea
+
+    def getBody(self):
+        return self.body.move(self.pos)
+
+    def getColBox(self):
+        return self.colBox.move(self.pos)
+
+    def getHitBox(self):
+        return self.hitbox.move(self.pos+self.hitboxOffset())
 
     def move(self, x, y):
         self.pos += [x,y]

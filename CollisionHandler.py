@@ -12,14 +12,16 @@ def clamp(nmin, nmax, n):
 class CollisionHandler(object):
 
     def __init__(self):
-        self.worldGeometry = []
+        pass
 
-        self.worldGeometry.append(pygame.Rect(100.0, 130.0, 100, 40))
-        self.worldGeometry.append(pygame.Rect(10.0, 70.0, 40, 40))
-        self.worldGeometry.append(pygame.Rect(0.0, 160.0, 300, 40))
-
-    def __call__(self, player):
+    def __call__(self, player, enemies, geometries):
         #in principle, can move full range
+        self.playerVsGeometry(player, geometries)
+
+        for e in enemies:
+            self.playerVsGeometry(e, geometries)
+
+    def playerVsGeometry(self, player, geometries):
         player.Lx = 1
         player.Ly = 1
 
@@ -57,7 +59,7 @@ class CollisionHandler(object):
         #player should fall if no collision with ground is found
         onGround = False
 
-        for geometry in self.worldGeometry:
+        for geometry in geometries:
 
             lx = -1
             ly = -1
