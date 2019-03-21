@@ -6,49 +6,21 @@ from pygame.locals import QUIT
 
 import numpy as np
 
-from PlayerFSM import PlayerFSM
+from View import View
+from Geometry import Geometry
+from FSMs import FSMs
 from AIFSM import AIFSM
 from TimerController import TimerController
 from InputHandler import InputHandler
 from CollisionHandler import CollisionHandler
-from Player import Player
+from Entity import Entity
 
 from Conts import *
     
 x=0
 y=1
 
-class Geometry(object):
-    def __init__(self, rect, colour = Colors.green):
-        self.body = rect
-        self.colour = colour
 
-    @property
-    def right(self):
-        return self.body.right
-
-    @property
-    def top(self):
-        return self.body.top
-
-    @property
-    def left(self):
-        return self.body.left
-
-    @property
-    def bottom(self):
-        return self.body.bottom
-
-    @property
-    def width(self):
-        return self.body.width
-
-    @property
-    def height(self):
-        return self.body.height
-
-    def draw(self, surface, view):
-        pygame.draw.rect(surface, self.colour, view.apply(self.body))
 
 def checkQuit():
     for event in pygame.event.get():
@@ -58,42 +30,25 @@ def checkQuit():
 
 """--------------------------------------------------------"""
 
-class View(object):
-    def __init__(self, size):
-        self.size = size
-        self.position = (0,0)
-        self.offset = 150
-        self.center = 0
-
-    def centerView(self, pos):
-        self.center = pos
-
-    def apply(self, rect):
-        return rect.move(-self.center+self.offset,0)
-
-def timeIntegrator(player):    
-
-    player.pos[x] += player.gDir[x]*player.gSpeed*timePerFrameInms*player.Lx
-    player.pos[y] += (player.yJumpSpeed + player.yImpulse)*timePerFrameInms*player.Ly
-    player.yJumpSpeed += player.yImpulse
 
 
-def drawScene(surface, view, player, enemies, geometries):
-    view.centerView(player.pos[0])
+def timeIntegrator(entities):    
+    for e in entities:
+        e.pos[x] += e.gDir[x]*e.gSpeed*timePerFrameInms*e.Lx
+        e.pos[y] += (e.yJumpSpeed + e.yImpulse)*timePerFrameInms*e.Ly
+        e.yJumpSpeed += e.yImpulse
+
+
+def drawScene(surface, view, entities, geometries):
+    view.centerView()
 
     surface.fill(Colors.black)
-    pygame.draw.rect(surface, player.colour, view.apply(player.getBody()))
 
-    for e in enemies:
-        pygame.draw.rect(surface, e.colour, view.apply(e.getBody()))
+    for e in entities:
+        e.draw(surface, view)
 
     for g in geometries:
         g.draw(surface, view)
-
-    if player.hurtBool:
-        pygame.draw.rect(surface, Colors.yellow, view.apply(player.getColBox()) ,0)
-    if player.hitBool:
-        pygame.draw.rect(surface, Colors.yellow, view.apply(player.getHitBox()),1)
 
     pygame.display.update()
 
@@ -103,10 +58,9 @@ def main():
     pygame.display.set_caption('Window')  
 
     timerController = TimerController()
-    player = Player()
     inputHandler = InputHandler()
 
-    playerFSM = PlayerFSM(timerController, player, inputHandler.pressed, inputHandler.previouslyPressed)
+    fsms = FSMs(timerController, inputHandler.pressed, inputHandler.previouslyPressed)
 
     timeSinceRender = timePerFrameInms+1
   
@@ -126,10 +80,12 @@ def main():
         Geometry(pygame.Rect(300,0,40,200))
     ]
 
-    enemies = [
-        Player(pos = (100,100)),
-        Player(pos = (150,100))
+    entities = [
+        Entity(entityType = "player", pos = (100,100)),
+        Entity(entityType = "yBox", pos = (50.0, 150.0))
     ]
+
+    view.hook(lambda : entities[0].pos)
 
     #main game loop
     while True:
@@ -148,18 +104,16 @@ def main():
             inputHandler.updateKeyState()
             timerController.tick()
 
-            #update intents
-            playerFSM(player, inputHandler.pressed, inputHandler.previouslyPressed)
+            #run fsm
+            fsms(entities, inputHandler.pressed, inputHandler.previouslyPressed)
 
-            #AIFSM(enemies)
-
-            #find contraints (i.e l used in time integrator)
-            collisionHandler(player, enemies, geometries)
+            #find constraints (i.e l used in time integrator)
+            collisionHandler(entities, geometries)
 
             #update world
-            timeIntegrator(player)
+            timeIntegrator(entities)
         
-        drawScene(surface, view, player, enemies, geometries)
+        drawScene(surface, view, entities, geometries)
 
 if __name__ == '__main__':
     main()

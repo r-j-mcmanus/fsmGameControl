@@ -1,7 +1,7 @@
 
 import pygame
 
-from PlayerFSM import StateID
+import StateID
 
 import numpy as np
 
@@ -13,8 +13,8 @@ class direction:
     right = 1
     left = -1
 
-class Player(object):
-    def __init__(self, bodyRect = pygame.Rect(0, 0, 10, 10), pos = np.array([50.0, 150.0])):
+class Entity(object):
+    def __init__(self, entityType, pos = (0,0), bodyRect = pygame.Rect(0, 0, 10, 10)):
         self.body = bodyRect
         self.colour = Colors.red
         self.stateID = StateID.Standing
@@ -41,6 +41,7 @@ class Player(object):
         self.vel = np.array([0,0])
         self.highJumpBool = True
         self.changeDirection = 1
+        self.entityType = entityType
 
         self.xImpulse = 0
         self.maxXSpeed = 100
@@ -108,4 +109,10 @@ class Player(object):
     def yImpulse(self):
         return gravImpulse*(1 + self.Dgrav)
         
-    
+    def draw(self, surface, view):
+        pygame.draw.rect(surface, self.colour, view.apply(self.getBody()))
+
+        if self.hurtBool:
+            pygame.draw.rect(surface, Colors.yellow, view.apply(self.getColBox()),0)
+        if self.hitBool:
+            pygame.draw.rect(surface, Colors.yellow, view.apply(self.getHitBox()),0)

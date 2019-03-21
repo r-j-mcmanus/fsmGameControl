@@ -48,7 +48,7 @@ class AIFSM(object):
     speed and various bools
     """
 
-    def __init__(self):
+    def __init__(self,timerController):
 
         self.currentStateID = StateID.Standing
 
@@ -67,24 +67,23 @@ class AIFSM(object):
         self.populateStateTransitions()
 
     def __call__(self, entities):
-        
         for e in entities:
-	        for transition in self.stateTransitions[player.stateID]:
-	            if transition.check():
-	                self.states[entity.stateID].exit(entity)
-	                entity.stateID = transition.endID
-	                self.states[entity.stateID].enter(entity)
-	                continue
+            for transition in self.stateTransitions[e.stateID]:
+                if transition.check(e):
+                    self.states[e.stateID].exit(e)
+                    e.stateID = transition.endID
+                    self.states[e.stateID].enter(e)
+                    continue
 
     class Transition(object):
         def __init__(self, endID, transitionFns):
             self.endID = endID
             self.transitionFns = transitionFns
 
-        def check(self):
+        def check(self,entity):
             transBool = True
             for transFn in self.transitionFns:
-                transBool *= transFn()
+                transBool *= transFn(entity)
             if transBool:
                 return transBool
 
@@ -97,13 +96,12 @@ class AIFSM(object):
     def populateStateTransitions(self):
         """Note that the order we add transitions is the order they are checked, and first one true is the result"""
         self.addTransition(StateID.Standing, StateID.Falling, self.transFns.checkOnGround(False))
-        self.addTransition(StateID.Falling, StateID.Standing, self.transFns.checkOnGround())
-
+        self.addTransition(StateID.Falling, StateID.Standing, self.transFns.checkOnGround(True))
 
     class TransFns:
         def __init__(self):
-            self.checkOnGround = lambda entity, eval = True : lambda : entity.onGround == eval
-            self.checkFalling =  lambda entity, eval = True: lambda : (entity.yJumpSpeed >= 0 or entity.startFalling) == eval
+            self.checkOnGround = lambda eval = True : lambda entity : entity.onGround == eval
+            self.checkFalling =  lambda eval = True : lambda entity : (entity.yJumpSpeed >= 0 or entity.startFalling) == eval
 
 
 class StateFactory(object):
@@ -118,6 +116,7 @@ class StateFactory(object):
 
 
         def enter(self, entity):
+            print "enter ai standing"
             entity.gSpeed = 0  
             entity.changeDirection = 1
             entity.applyChangeDir()
@@ -127,12 +126,13 @@ class StateFactory(object):
 
     class Falling(object):
         def __init__(self, timerController):
-        	pass
+            pass
 
         def internal(self, entity):
-        	pass
+            pass
 
         def enter(self, entity):
+            print "enter ai falling"
             entity.Dgrav = 0
             entity.startFalling = False
             entity.onGround = False

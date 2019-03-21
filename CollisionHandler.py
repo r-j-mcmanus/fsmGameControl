@@ -14,35 +14,33 @@ class CollisionHandler(object):
     def __init__(self):
         pass
 
-    def __call__(self, player, enemies, geometries):
+    def __call__(self, entities, geometries):
         #in principle, can move full range
-        self.playerVsGeometry(player, geometries)
+        for e in entities:
+            self.entitiesVsGeometry(e, geometries)
 
-        for e in enemies:
-            self.playerVsGeometry(e, geometries)
-
-    def playerVsGeometry(self, player, geometries):
-        player.Lx = 1
-        player.Ly = 1
+    def entitiesVsGeometry(self, e, geometries):
+        e.Lx = 1
+        e.Ly = 1
 
 
         #for window boundaries
-        if  player.onGround:
+        if  e.onGround:
             speed = PlayerConsts.Ground.maxSpeed
         else:
-            speed = clamp(0,PlayerConsts.Air.maxSpeed, player.gSpeed + player.xImpulse * PlayerConsts.Air.xImpulseMagnitude)
+            speed = clamp(0,PlayerConsts.Air.maxSpeed, e.gSpeed + e.xImpulse * PlayerConsts.Air.xImpulseMagnitude)
 
 
-        dv = speed * player.gDir[x]*timePerFrameInms
+        dv = speed * e.gDir[x]*timePerFrameInms
 
-        L = (-player.left + 0) / dv
+        L = (-e.left + 0) / dv
         if 0 <= L <= 1 and dv<0:
-            player.Lx = L
+            e.Lx = L
 
         dv = -dv
-        L = (-300 + (player.right) ) / dv
+        L = (-300 + (e.right) ) / dv
         if 0 <= L <= 1 and dv<0:
-            player.Lx = L
+            e.Lx = L
         
 
         lx = -1
@@ -56,7 +54,7 @@ class CollisionHandler(object):
         dv = 0
         l = [0,0]
 
-        #player should fall if no collision with ground is found
+        #e should fall if no collision with ground is found
         onGround = False
 
         for geometry in geometries:
@@ -68,21 +66,21 @@ class CollisionHandler(object):
             overlap_y = False
 
 
-            dv = player.gSpeed * player.gDir[x]
+            dv = e.gSpeed * e.gDir[x]
 
-            lx1 = (geometry.right - player.left) / (dv*timePerFrameInms)
-            lx2 = (geometry.left - player.right) / (dv*timePerFrameInms)
+            lx1 = (geometry.right - e.left) / (dv*timePerFrameInms)
+            lx2 = (geometry.left - e.right) / (dv*timePerFrameInms)
 
             # if 0<= lx1 <=1, then the projections overlap at l
             # let lx1 < lx2, if [lx1,lx2] supset [0,1], then projections overlap
 
             if 0<=lx1<=1 or 0<=lx2<=1:
-                if not (0<=lx2<=1) and player.gDir[x]<0:
+                if not (0<=lx2<=1) and e.gDir[x]<0:
                     lx = lx1
-                    # geometry.right = player.left
-                elif not (0<=lx1<=1) and player.gDir[x]>0:
+                    # geometry.right = e.left
+                elif not (0<=lx1<=1) and e.gDir[x]>0:
                     lx = lx2
-                    # geometry.left = player.right
+                    # geometry.left = e.right
                 else:
                     # Collision but not in direction of motion
                     continue
@@ -99,23 +97,23 @@ class CollisionHandler(object):
                     # of the fraim.
 
 
-            dv = player.yJumpSpeed + gravImpulse*(1 + player.Dgrav)
+            dv = e.yJumpSpeed + gravImpulse*(1 + e.Dgrav)
 
-            ly1 = (geometry.bottom - player.top) / (dv*timePerFrameInms)
-            ly2 = (geometry.top - player.bottom) / (dv*timePerFrameInms)
+            ly1 = (geometry.bottom - e.top) / (dv*timePerFrameInms)
+            ly2 = (geometry.top - e.bottom) / (dv*timePerFrameInms)
             if np.isnan(ly2):
                 ly2 = -ly1
 
             if 0<=ly1<=1 or 0<=ly2<=1:
                 if not (0<=ly2<=1) and dv <= 0:
                     ly = ly1
-                    player.startFalling = True
-                    # Collision on top of player, flag falling
+                    e.startFalling = True
+                    # Collision on top of e, flag falling
                     # Remove to hug roof
                 elif not (0<=ly1<=1) and dv >= 0:
                     ly = ly2
                     onGround = True
-                    # Collision on bottom of player, flag landing
+                    # Collision on bottom of e, flag landing
                 else:
                     continue
             else:
@@ -138,10 +136,10 @@ class CollisionHandler(object):
             # If lx!=1 will result in falling down at the corner
             # This way feels better and is more forgiving.
             if ly !=1:
-                if ly < player.Ly:
-                    player.Ly = ly
+                if ly < e.Ly:
+                    e.Ly = ly
             else:
-                if lx < player.Lx:
-                    player.Lx = lx
+                if lx < e.Lx:
+                    e.Lx = lx
 
-        player.onGround = onGround
+        e.onGround = onGround
